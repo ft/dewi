@@ -1,3 +1,8 @@
+#!/usr/bin/make
+# Copyright (c) 2010
+# Frank Terbeck <ft@bewatermyfriend.org>, All rights reserved.
+# Terms for redistribution and use can be found in `LICENCE'.
+
 CHILD_HELP = @@PERL5@@ @@BINDIR@@/dewi.pl child_help
 DEPLOY_SUBDIR = @@PERL5@@ @@BINDIR@@/dewi.pl deploy
 WITHDRAW_SUBDIR = @@PERL5@@ @@BINDIR@@/dewi.pl withdraw

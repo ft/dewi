@@ -1,3 +1,8 @@
+#!/usr/bin/make
+# Copyright (c) 2010
+# Frank Terbeck <ft@bewatermyfriend.org>, All rights reserved.
+# Terms for redistribution and use can be found in `LICENCE'.
+
 .include @@LIBDIR@@/config.mk
 .include @@LIBDIR@@/s_actions.mk
 -include local_dewi.mk

@@ -4,3 +4,4 @@
 !.gitignore
 lib/*
 !lib/*.in
+!lib/shell.sh
