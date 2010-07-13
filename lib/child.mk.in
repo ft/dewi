@@ -1,0 +1,13 @@
+.include @@LIBDIR@@/config.mk
+.include @@LIBDIR@@/s_actions.mk
+
+all:
+	@$(CHILD_HELP)
+
+deploy:
+	@$(DEPLOY_SUBDIR)
+
+withdraw:
+	@$(WITHDRAW_SUBDIR)
+
+.PHONY: all deploy withdraw

@@ -1,0 +1,3 @@
+CHILD_HELP = @@PERL5@@ @@BINDIR@@/dewi.pl child_help
+DEPLOY_SUBDIR = @@PERL5@@ @@BINDIR@@/dewi.pl deploy
+WITHDRAW_SUBDIR = @@PERL5@@ @@BINDIR@@/dewi.pl withdraw

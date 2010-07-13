@@ -1,0 +1,155 @@
+    dewi - deploy and withdraw configuration files  |
+----------------------------------------------------+
+
+Dependencies.
+
+    Dewi requires Perl5, a posix sh and a make implementation (GNU and
+    BSD should both work).
+
+
+Installation.
+
+    Say you keep all your setup files in ~/etc. Like ~/etc/zsh.
+    Now you'd put dewi into ~/etc/.dewi, chdir into it and call:
+
+        % sh generate.sh "$(pwd)"
+        % sh install.sh ..
+
+    That'll create a Makefile in `..' (which would be ~/etc).
+
+    To dewi-fy a subdirectory, you put file called `dewifile' (the file
+    name check is case insensitive) into a subdirectory and call
+
+        % make update
+
+    in ~/etc. That scans all subdirectories for dewifiles and copies the
+    latest version of the subdirectory makefile into that have such a
+    dewifile.
+
+
+Usage.
+
+    When everything is installed correctly and a dewifile is in place,
+    you can just do:
+
+        % make deploy
+
+    to deploy the configuration, and
+
+        % make withdraw
+
+    to take it back.
+
+    "make deploy" and "make withdraw" called in ~/etc deploys/withdraws
+    all dewified subdirectories.
+
+
+Example.
+
+    Say you got your zsh configuration in ~/etc/zsh and its layout
+    looks like this:
+
+        ~/etc/zsh/zshrc.d/*.z       - Sub configuration files
+        ~/etc/zsh/zshrc             - The main configuration file, which
+                                      loads the others.
+
+    The corresponding dewifile:
+
+        register({ glob        => 'zshrc',
+                   method      => 'copy',
+                   destination => '~/',
+                   transform   => sub { return '.' . $_[0]; }});
+        register({ glob        => 'zshrc.d/*.z',
+                   method      => 'copy',
+                   destination => '~/.zshrc.d',
+                   transform   => sub { return $_[0]; }});
+
+    Some parts are optinal. Actually, all except for "glob" are optional.
+    You could even just pass a scalar to `register', in which case that
+    value is used as the `glob' part. So, if you'd have a file
+    `~/etc/zsh/.zshrc' and only wanted to deploy that, you'd do:
+
+        register('.zshrc');
+
+    That means deploy the file `.zshrc' with default values for all other
+    parameters. The defaults are:
+
+        method          - copy
+        destination     - ~/
+        transform       - don't transform. Use the same names as the
+                          ones that were globbed.
+
+    There are some predefined functions to use for `transform', too:
+
+        notransform     - Do not transform the globbed names. This is the
+                          default transform.
+        makedotfile     - Prefix the globbed name by a dot. Ie. `zshrc'
+                          would be transformed into `.zshrc'.
+
+    Possible values for `method' are:
+
+        copy            - Copy file(s) if the destination is
+                          older than the source.
+        force_copy      - Copy file(s) regardless of age.
+        hardlink        - Create hardlinks.
+        symlink         - Create symlinks.
+
+    If the `glob' parameter is a coderef, you can have absolute control
+    over how filename generation is done. The coderef is expected to
+    return a array of file names.
+
+    With all that knowledge, the previous example can be boiled down to
+    this:
+
+        register({ glob        => 'zshrc',
+                   transform   => \&makedotfile});
+        register({ glob        => 'zshrc.d/*.z',
+                   destination => '~/.zshrc.d', });
+
+    Easy enough.
+
+    Now suppose, you got a few files named `z*' instead of just `zshrc',
+    like `zlogout', `zprofile', `zshenv' and `zshrc'. So, your layout
+    not looks like this:
+
+        ~/etc/zsh/zshrc.d/*.z       - Sub configuration files
+        ~/etc/zsh/zshrc             - The main configuration file
+        ~/etc/zsh/zshenv            - Some other file
+        ~/etc/zsh/zprofile          - And another
+        ~/etc/zsh/zlogout           - And a final one
+
+    The problem here is that you cannot just glob for `z*' because that
+    would match `zshrc.d', too, which is a directory.
+
+    The trick is to use a coderef to do some filtering. When you use
+    a coderef, you can use the `globarg' parameter to hand an argument
+    to the coderef.
+
+        sub glob_just_files {
+            my ($glob) = @_;
+            @result = grep { -f } bsd_glob($glob);
+            return @result;
+        }
+        register({ glob        => \&glob_just_files,
+                   globarg     => 'z*',
+                   transform   => \&makedotfile});
+        register({ glob        => 'zshrc.d/*.z',
+                   destination => '~/.zshrc.d', });
+
+    For convenience, dewi defines some coderefs for you. Well, currently
+    only one:
+
+        regular_files           - Like the default glob, but only
+                                  match regular files. Expects `globarg'
+                                  to be a string scalar which holds the
+                                  desired glob. Like "*.txt".
+
+    With that you can now do this:
+
+        register({ glob        => \&regular_files,
+                   globarg     => 'z*',
+                   transform   => \&makedotfile});
+        register({ glob        => 'zshrc.d/*.z',
+                   destination => '~/.zshrc.d', });
+
+    Neat, huh? :)

@@ -1,0 +1,6 @@
+*~
+#*#
+.*
+!.gitignore
+lib/*
+!lib/*.in

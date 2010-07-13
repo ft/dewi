@@ -1,0 +1,16 @@
+.include @@LIBDIR@@/config.mk
+.include @@LIBDIR@@/p_actions.mk
+
+all:
+	@$(PARENT_HELP)
+
+deploy:
+	@$(DEPLOY_ALL_SUBDIRS)
+
+withdraw:
+	@$(WITHDRAW_ALL_SUBDIRS)
+
+update:
+	@$(UPDATE_SUBDIRS)
+
+.PHONY: all deploy withdraw
