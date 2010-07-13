@@ -5,7 +5,6 @@
 
 include @@LIBDIR@@/config.mk
 include @@LIBDIR@@/s_actions.mk
--include local_dewi.mk
 
 all:
 	@$(CHILD_HELP)
@@ -16,4 +15,5 @@ deploy:
 withdraw:
 	@$(WITHDRAW_SUBDIR)
 
+-include local_dewi.mk
 .PHONY: all deploy withdraw
