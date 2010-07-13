@@ -63,6 +63,8 @@ __generate() {
         s!\@\@BASEDIR\@\@!'"$basedir"'!;
         s!\@\@BINDIR\@\@!'"$bindir"'!;
         s!\@\@LIBDIR\@\@!'"$libdir"'!;
+        s!\@\@PERL5\@\@!'"$perl"'!;
+        s!\@\@POSIX_SH\@\@!'"$posix_sh"'!;
     '
 }
 

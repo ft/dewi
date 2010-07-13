@@ -3,8 +3,8 @@
 # Frank Terbeck <ft@bewatermyfriend.org>, All rights reserved.
 # Terms for redistribution and use can be found in `LICENCE'.
 
-.include @@LIBDIR@@/config.mk
-.include @@LIBDIR@@/p_actions.mk
+include @@LIBDIR@@/config.mk
+include @@LIBDIR@@/p_actions.mk
 -include local_dewi.mk
 
 all:
