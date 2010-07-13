@@ -1,5 +1,6 @@
 .include @@LIBDIR@@/config.mk
 .include @@LIBDIR@@/s_actions.mk
+-include local_dewi.mk
 
 all:
 	@$(CHILD_HELP)
