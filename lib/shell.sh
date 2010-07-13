@@ -41,9 +41,14 @@ find_binary() {
 resolv_path() {
     [ -d "$1" ] || return 1
     (
-        cd "$1" || return 1
+        cd "$1" || exit 1
         printf '%s' "$(pwd)"
-        return 0
+        exit 0
     )
     return $?
+}
+
+__is_dewified() {
+    [ -e "$1"/dewifile ] && [ -e "$1"/Makefile ] && return 0
+    return 1
 }

@@ -69,7 +69,7 @@ __generate() {
 }
 
 printf '%s\n' "Generating files:"
-for file in "$libdir"/*."in"; do
+for file in "$bindir"/*."in" "$libdir"/*."in"; do
     gen_file=${file%.in}
     printf '  %s\n' "$gen_file"
     __generate < "$file" > "$gen_file"

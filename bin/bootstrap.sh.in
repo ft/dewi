@@ -1,0 +1,43 @@
+#!/bin/sh
+# Copyright (c) 2010
+# Frank Terbeck <ft@bewatermyfriend.org>, All rights reserved.
+# Terms for redistribution and use can be found in `LICENCE'.
+
+. @@LIBDIR@@/shell.sh
+if [ ! -r @@LIBDIR@@/genshell.sh ]; then
+    die 'Please run generate.sh first. See README for details.'
+    exit 1
+fi
+. @@LIBDIR@@/genshell.sh
+
+if [ "$#" != 1 ]; then
+    printf 'Usage: make bs d=foo\n'
+    printf '  ...where `foo'\'' is the directory you want to bootstrap.\n'
+    printf '  Only *one* directory per run is permitted.\n'
+    exit 1
+fi
+dir="$1"
+
+if [ ! -d "$dir" ]; then
+    printf 'Not a directory: "%s". Abort.\n' "$dir"
+    exit 1
+fi
+
+if __is_dewified "$dir"; then
+    printf 'Directory "%s" is already dewified. Doing nothing.\n' "$dir"
+    exit 0
+fi
+
+(
+    cd "$dir" || exit 1
+    printf 'Bootstrapping `%s'\'':\n' "$dir"
+    printf '  Installing `dewifile'\''...\n'
+    cp -- "$libdir"/dewifile.stub dewifile || exit 1
+    printf '  Installing `Makefile'\''...\n'
+    cp -- "$libdir"/child.mk Makefile || exit 1
+    exit 0
+)
+if [ "$?" != "0" ]; then
+    die 'Bootstrapping '"$dir"' failed!'
+fi
+exit 0

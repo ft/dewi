@@ -5,3 +5,5 @@
 lib/*
 !lib/*.in
 !lib/shell.sh
+!lib/dewifile.stub
+bin/bootstrap.sh

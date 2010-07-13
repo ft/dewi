@@ -19,4 +19,7 @@ withdraw:
 update:
 	@$(UPDATE_SUBDIRS)
 
-.PHONY: all deploy withdraw
+bs:
+	@$(DEWIFY) $(d)
+
+.PHONY: all bs deploy update withdraw
