@@ -10,4 +10,22 @@ if [ ! -r ./lib/genshell.sh ]; then
 fi
 . ./lib/genshell.sh
 
-cp lib/parent.mk "$basedir"/Makefile
+fail=0
+
+__install() {
+    printf '  %s\n' "$2"
+    if ! [ "$1" -nt "$2" ]; then
+        printf '    INFO: ...not older than %s.\n' "$1"
+        printf '    INFO: Forgot to run `generate.sh'\''?\n'
+    fi
+    cp -- "$1" "$2" || fail=1
+}
+
+printf 'Installing...\n'
+__install lib/parent.mk "$basedir"/Makefile
+
+if [ "$fail" != "0" ]; then
+    printf '\n !!! WARNING !!!\n'
+    printf ' Encountered at least one problem during installation!\n'
+fi
+exit "$fail"
