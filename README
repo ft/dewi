@@ -127,8 +127,7 @@ Example.
 
         sub glob_just_files {
             my ($glob) = @_;
-            @result = grep { -f } bsd_glob($glob);
-            return @result;
+            return grep { -f } bsd_glob($glob);
         }
         register({ glob        => \&glob_just_files,
                    globarg     => 'z*',
