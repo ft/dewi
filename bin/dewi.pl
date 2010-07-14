@@ -344,6 +344,19 @@ sub xcopy {
     return 1;
 }
 
+sub xdir_is_empty {
+    my ($dir) = @_;
+    my ($dh);
+
+    opendir $dh, $dir or die "xdir_is_empty(): Could not open $dir: $!\n";
+    if (scalar(grep(!/^\.\.?$/, readdir($dh)) == 0)) {
+        closedir $dh;
+        return 1;
+    }
+    closedir $dh;
+    return 0;
+}
+
 sub xhardlink {
     my ($src, $dst) = @_;
 
@@ -352,6 +365,13 @@ sub xhardlink {
     }
 
     link $dst, $src or die "Could not create hardlink: $!\n";
+}
+
+sub xrmdir {
+    # Assumes that it is never called in dryrun mode.
+    my ($dir) = @_;
+
+    rmdir $dir or die "rmdir() failed: $!\n";
 }
 
 sub xsymlink {
@@ -371,6 +391,7 @@ sub stat_names {
 
     return $names[$num];
 }
+
 sub xstat {
     my ($file) = @_;
     my ($i, %stat, @data);
@@ -392,6 +413,16 @@ sub xstat {
         $stat{dir} = 1;
     }
     return \%stat;
+}
+
+sub xunlink {
+    my ($file) = @_;
+
+    if (get_opt_bool('dryrun')) {
+        return 1;
+    }
+
+    unlink $file or die "unlink() failed: $!\n";
 }
 
 # aaaand ACTION.
@@ -492,6 +523,34 @@ sub deploy_files {
 
 sub withdraw_files {
     my ($base) = @_;
+    my (%dests);
+
+    print "Withdrawing $base...\n";
+    foreach my $f (@regfiles) {
+        if (!defined $dests{$f->{destination}}) {
+            $dests{$f->{destination}} = 'xxx';
+        }
+        verbose("  withdraw: unlink(" . $f->{mergedname} . ")\n");
+        xunlink($f->{mergedname});
+    }
+
+    foreach my $d (sort { length $b <=> length $a } keys %dests) {
+        if (!-d $d) {
+            verbose("  withdraw: $d does not exist. Ignoring.\n");
+            next;
+        }
+        if (File::Spec->canonpath($d) eq File::Spec->canonpath($ENV{HOME})) {
+            # no, we're not removing ~.
+            next;
+        }
+        if (get_opt_bool('dryrun')) {
+            verbose("  dryrun: Test if $d is empty and if so remove it.\n");
+        } elsif (xdir_is_empty($d)) {
+            verbose(
+                "  withdraw: rmdir($d) (empty directory)\n");
+            xrmdir($d);
+        }
+    }
 }
 
 # the main() routine
