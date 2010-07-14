@@ -119,7 +119,7 @@ sub __register {
     }
 
     $h->{destination} =~ s!^~!$ENV{HOME}!;
-    $h->{destination} = File::Spec->canonpath($h->{destination});
+    $h->{destination} = Cwd::realpath($h->{destination});
     foreach my $path (@files) {
         my $new = {};
         my ($volume,$directories,$file) = File::Spec->splitpath( $path );
@@ -364,7 +364,8 @@ sub xhardlink {
         return 1;
     }
 
-    link $dst, $src or die "Could not create hardlink: $!\n";
+    link Cwd::realpath($src), $dst
+        or die "Could not create hardlink: $!\n";
 }
 
 sub xrmdir {
@@ -381,7 +382,13 @@ sub xsymlink {
         return 1;
     }
 
-    symlink $dst, $src or die "Could not create symlink: $!\n";
+    if (-l $dst) {
+        # if we're here, $dst exists, is a symlink but links somewhere
+        # else. Remove it, so the symlink() below can succeed.
+        xunlink($dst);
+    }
+    symlink Cwd::realpath($src), $dst
+        or die "Could not create symlink: $!\n";
 }
 
 sub stat_names {
@@ -539,7 +546,7 @@ sub withdraw_files {
             verbose("  withdraw: $d does not exist. Ignoring.\n");
             next;
         }
-        if (File::Spec->canonpath($d) eq File::Spec->canonpath($ENV{HOME})) {
+        if (Cwd::realpath($d) eq Cwd::realpath($ENV{HOME})) {
             # no, we're not removing ~.
             next;
         }
