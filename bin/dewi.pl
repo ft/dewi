@@ -61,6 +61,8 @@ sub makedotfile {
 
 # The `register()' subroutine
 sub __register_defaults {
+    # This sets default values for the different meaningful keys and
+    # also does some error-checking on values where it makes sense.
     my ($h) = @_;
 
     if (!defined $h->{glob}) {
@@ -80,6 +82,11 @@ sub __register_defaults {
     if (!defined $h->{method}) {
         $h->{method} = 'copy';
         debug("register(): Setting default `method': copy\n");
+    }
+    if (!main::method_exists($h->{method})) {
+        die
+        "register(): Unknown `method' parameter: \"" . $h->{method} . "\"\n".
+        "                        Call number $reg_calls.\n";
     }
 
     if (!defined $h->{transform}) {
@@ -215,6 +222,8 @@ package main;
 use strict;
 use warnings qw(all);
 use English '-no_match_vars';
+use Cwd;
+use File::Copy;
 use File::Spec;
 
 our $NAME = 'dewi';
@@ -225,6 +234,21 @@ our $VERSION = $MAJOR_VERSION . '.' . $MINOR_VERSION . $SUFFIX_VERSION;
 
 my (%opts);
 our (@regfiles);
+
+my %methods = (
+    copy       => \&method_copy,
+    force_copy => \&method_force_copy,
+    hardlink   => \&method_hardlink,
+    symlink    => \&method_symlink
+);
+sub method_exists {
+    my ($method) = @_;
+
+    if (defined $methods{$method}) {
+        return 1;
+    }
+    return 0;
+}
 
 # output
 sub verbose {
@@ -240,6 +264,7 @@ sub debug {
 # option handling
 sub defaults {
     set_opt('debug',   'no');
+    set_opt('dryrun',  'no');
     set_opt('verbose', 'no');
 }
 
@@ -308,6 +333,67 @@ sub child_help {
     help_footer();
 }
 
+# utilities
+sub xcopy {
+    my ($src, $dst) = @_;
+
+    if (get_opt_bool('dryrun')) {
+        return 1;
+    }
+    copy($src, $dst) or die "copy() failed: $!\n";
+    return 1;
+}
+
+sub xhardlink {
+    my ($src, $dst) = @_;
+
+    if (get_opt_bool('dryrun')) {
+        return 1;
+    }
+
+    link $dst, $src or die "Could not create hardlink: $!\n";
+}
+
+sub xsymlink {
+    my ($src, $dst) = @_;
+
+    if (get_opt_bool('dryrun')) {
+        return 1;
+    }
+
+    symlink $dst, $src or die "Could not create symlink: $!\n";
+}
+
+sub stat_names {
+    my ($num) = @_;
+    my @names = qw{ dev ino mode nlink uid gid rdev size
+                    atime mtime ctime blksize blocks };
+
+    return $names[$num];
+}
+sub xstat {
+    my ($file) = @_;
+    my ($i, %stat, @data);
+
+    @data = stat($file);
+    $i = 0;
+    %stat = map { stat_names($i++) => $_ } @data;
+    if (-e _) {
+        $stat{exist} = 1;
+    } else {
+        $stat{exist} = 0;
+    }
+
+    $stat{plainfile} = 0;
+    $stat{dir} = 0;
+    if (-f _) {
+        $stat{plainfile} = 1;
+    } elsif (-d _) {
+        $stat{dir} = 1;
+    }
+    return \%stat;
+}
+
 # aaaand ACTION.
 sub merge_name {
     my ($dest, $file) = @_;
@@ -315,25 +401,97 @@ sub merge_name {
 }
 
 sub method_copy {
-    my ($from, $to) = @_;
+    my ($src, $dst) = @_;
+    my ($dstat, $sstat);
+
+    $sstat = xstat($src);
+    $dstat = xstat($dst);
+    if (($dstat->{exist} == 1) && ($sstat->{ino} == $dstat->{ino})) {
+        die "  _copy(): $src and $dst are the same file. Please resolve!\n";
+    }
+    if (($dstat->{exist} == 1) && ($sstat->{mtime} <= $dstat->{mtime})) {
+        verbose("  _copy(): $dst (not newer than source, skipping)\n");
+        debug("   source: $src\n");
+        return 1;
+    }
+    verbose("  _copy(): $dst\n");
+    debug("   source: $src\n");
+    xcopy($src, $dst);
 }
 
 sub method_force_copy {
-    my ($from, $to) = @_;
+    my ($src, $dst) = @_;
+    my ($dstat, $sstat);
+
+    $sstat = xstat($src);
+    $dstat = xstat($dst);
+    if (($dstat->{exist} == 1) && ($sstat->{ino} == $dstat->{ino})) {
+        die
+        "  _force_copy(): $src and $dst are the same file. Please resolve!\n";
+    }
+    verbose("  _force_copy(): $dst\n");
+    debug("         source: $src\n");
+    xcopy($src, $dst);
 }
 
 sub method_hardlink {
-    my ($from, $to) = @_;
+    my ($src, $dst) = @_;
+    my ($dstat, $sstat);
+
+    $sstat = xstat($src);
+    $dstat = xstat($dst);
+    if (($dstat->{exist} == 1) && ($sstat->{ino} == $dstat->{ino})) {
+        verbose("  _hardlink(): $dst (hardlinked to source, skipping)\n");
+        debug("       source: $src\n");
+        return 1;
+    }
+    verbose("  _hardlink(): $dst\n");
+    debug("       source: $src\n");
+    xhardlink($src, $dst);
 }
 
 sub method_symlink {
-    my ($from, $to) = @_;
+    my ($src, $dst) = @_;
+    my ($not_a_symlink);
+
+    if (-l $dst) {
+        $not_a_symlink = 0;
+        my ($sstat, $tstat, $t);
+        $t = readlink $dst or die "  _symlink(): readlink() failed: $!\n";
+        $tstat = xstat($t);
+        $sstat = xstat($src);
+        if (($tstat->{exist} == 1) && ($tstat->{ino} == $sstat->{ino})) {
+            verbose("  _symlink(): $dst (symlinked to source, skipping)\n");
+            debug("      source: $src\n");
+            return 1;
+        }
+    } else {
+        $not_a_symlink = 1;
+    }
+
+    if ($not_a_symlink && -e $dst) {
+        die
+        "  _symlink(): destination $dst exists but is not a symlink.\n" .
+        "              Please resolve!\n";
+    }
+    verbose("  _symlink(): $dst\n");
+    debug("      source: $src\n");
+    xsymlink($src, $dst);
 }
 
 sub deploy_files {
+    my ($base) = @_;
+
+    print "Deploying $base...\n";
+    foreach my $f (@regfiles) {
+        $methods{$f->{method}}->(
+            $f->{path},
+            $f->{mergedname})
+    }
 }
 
 sub withdraw_files {
+    my ($base) = @_;
 }
 
 # the main() routine
@@ -342,16 +500,23 @@ sub main {
         die "usage: dewi.pl <mode> [options]\n";
     }
     my $mode = $ARGV[0];
+    my $cwd = Cwd::cwd();
+    my @dirs = File::Spec->splitdir($cwd);
+    my $base = $dirs[-1];
     defaults();
 
     if ($mode eq 'deploy' || $mode eq 'withdraw') {
         DewiFile::read_dewifile() or return 1;
     }
 
+    if (get_opt_bool('dryrun')) {
+        print "dewi: --- This is a dry run ---\n";
+    }
+
     if ($mode eq 'deploy') {
-        deploy_files();
+        deploy_files($base);
     } elsif ($mode eq 'withdraw') {
-        withdraw_files();
+        withdraw_files($base);
     } elsif ($mode eq 'parent_help') {
         parent_help();
     } elsif ($mode eq 'child_help') {
