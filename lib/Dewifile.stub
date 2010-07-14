@@ -1,0 +1,15 @@
+#!/usr/bin/perl
+# This is the placeholder Dewifile for freshly dewified subdirectories.
+# Remove its content and fill it with something useful.
+
+# Here is a bit example code to get you started:
+#
+#set_opt('debug',   'true');
+#set_opt('dryrun',  'true');
+#set_opt('verbose', 'true');
+#
+#register( { glob      => 'my_rc_file',
+#            method    => 'symlink',
+#            transform => \&makedotfile } );
+
+dewifile_is_empty();

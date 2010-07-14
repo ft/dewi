@@ -31,8 +31,8 @@ fi
 (
     cd "$dir" || exit 1
     printf 'Bootstrapping `%s'\'':\n' "$dir"
-    printf '  Installing `dewifile'\''...\n'
-    cp -- "$libdir"/dewifile.stub dewifile || exit 1
+    printf '  Installing `Dewifile'\''...\n'
+    cp -- "$libdir"/Dewifile.stub Dewifile || exit 1
     printf '  Installing `Makefile'\''...\n'
     cp -- "$libdir"/child.mk Makefile || exit 1
     exit 0

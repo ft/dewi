@@ -1,5 +1,0 @@
-#!/usr/bin/perl
-# This is the placeholder dewifile for freshly dewified subdirectories.
-# Remove its content and fill it with something useful.
-
-dewifile_is_empty();

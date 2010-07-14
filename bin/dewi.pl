@@ -163,7 +163,7 @@ sub register {
     return 1;
 }
 
-# dewifile reader
+# Dewifile reader
 sub read_dewifile {
     my ($file, $d, $rc);
 
@@ -173,7 +173,7 @@ sub read_dewifile {
     our $SUFFIX_VERSION = $main::SUFFIX_VERSION;
     our $VERSION = $main::VERSION;
 
-    $file = 'dewifile';
+    $file = 'Dewifile';
 
     $rc = do $file;
     if (!defined $rc && $EVAL_ERROR) {
@@ -199,12 +199,12 @@ sub read_dewifile {
 # place holder function for the bootstrapping functionality
 sub dewifile_is_empty {
     print
-"This dewifile is empty. Is was probably created by dewi's bootstrap mode.\n".
+"This Dewifile is empty. Is was probably created by dewi's bootstrap mode.\n".
 "You will need to register the files you want dewi to deploy. This is\n".
 "merely a placeholder.   Thanks for your attention.\n";
 }
 
-# a glorified '1;' for the end of dewifiles
+# a glorified '1;' for the end of Dewifiles
 sub end {
     return 1;
 }
@@ -302,7 +302,7 @@ sub child_help {
     print
 "\n".
 "Built-in make targets:\n".
-"    deploy    - Deploy the files as configured in `dewifile'.\n".
+"    deploy    - Deploy the files as configured in `Dewifile'.\n".
 "    withdraw  - Remove the configured files from their deployment places.\n".
 "    all       - Display this help text.\n";
     help_footer();

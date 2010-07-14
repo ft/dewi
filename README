@@ -17,19 +17,19 @@ Installation.
 
     That'll create a Makefile in `..' (which would be ~/etc).
 
-    To dewi-fy a subdirectory, you put file called `dewifile' (the file
-    name check is case insensitive) into a subdirectory and call
+    To dewi-fy a subdirectory, you put file called `Dewifile' into a
+    subdirectory and call:
 
         % make update
 
-    in ~/etc. That scans all subdirectories for dewifiles and copies the
+    in ~/etc. That scans all subdirectories for Dewifiles and copies the
     latest version of the subdirectory makefile into that have such a
-    dewifile.
+    Dewifile.
 
 
 Usage.
 
-    When everything is installed correctly and a dewifile is in place,
+    When everything is installed correctly and a Dewifile is in place,
     you can just do:
 
         % make deploy
@@ -53,7 +53,7 @@ Example.
         ~/etc/zsh/zshrc             - The main configuration file, which
                                       loads the others.
 
-    The corresponding dewifile:
+    The corresponding Dewifile:
 
         register({ glob        => 'zshrc',
                    method      => 'copy',

@@ -49,6 +49,6 @@ resolv_path() {
 }
 
 __is_dewified() {
-    [ -e "$1"/dewifile ] && [ -e "$1"/Makefile ] && return 0
+    [ -e "$1"/Dewifile ] && [ -e "$1"/Makefile ] && return 0
     return 1
 }
