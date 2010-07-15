@@ -432,6 +432,48 @@ sub xunlink {
     unlink $file or die "unlink() failed: $!\n";
 }
 
+sub ensure_dir {
+    # think: mkdir -p /foo/bar/baz
+    my ($wantdir) = @_;
+    my (@parts, $sofar);
+
+    if (-d $wantdir) {
+        return 1;
+    }
+
+    if ($wantdir =~ q{^/}) {
+        $sofar = q{/};
+    } else {
+        $sofar = q{};
+    }
+
+    @parts = split /\//, $wantdir;
+    foreach my $part (@parts) {
+        if ($part eq q{}) {
+            next;
+        }
+        $sofar = (
+                  $sofar eq q{}
+                    ? $part
+                    : (
+                        $sofar eq q{/}
+                          ? q{/} . $part
+                          : $sofar . q{/} . $part
+                      )
+                 );
+
+        if (!-d $sofar) {
+            if (!get_opt_bool('dryrun')) {
+                verbose("  _mkdir(): $sofar\n");
+                mkdir $sofar
+                    or die "Could not mkdir($sofar).\n" . "Reason: $!\n";
+            }
+        }
+    }
+
+    return 1;
+}
+
 # aaaand ACTION.
 sub merge_name {
     my ($dest, $file) = @_;
@@ -522,6 +564,7 @@ sub deploy_files {
 
     print "Deploying $base...\n";
     foreach my $f (@regfiles) {
+        ensure_dir($f->{destination});
         $methods{$f->{method}}->(
             $f->{path},
             $f->{mergedname})
