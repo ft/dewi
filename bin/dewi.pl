@@ -580,8 +580,13 @@ sub withdraw_files {
         if (!defined $dests{$f->{destination}}) {
             $dests{$f->{destination}} = 'xxx';
         }
-        verbose("  withdraw: unlink(" . $f->{mergedname} . ")\n");
-        xunlink($f->{mergedname});
+        if (!-e $f->{mergedname}) {
+            verbose("  withdraw: " . $f->{mergedname}
+                . " does not exist. Ignoring.\n");
+        } else {
+            verbose("  withdraw: unlink(" . $f->{mergedname} . ")\n");
+            xunlink($f->{mergedname});
+        }
     }
 
     foreach my $d (sort { length $b <=> length $a } keys %dests) {
