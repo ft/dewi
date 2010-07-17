@@ -3,8 +3,9 @@
 # Frank Terbeck <ft@bewatermyfriend.org>, All rights reserved.
 # Terms for redistribution and use can be found in `LICENCE'.
 
-include @@LIBDIR@@/config.mk
-include @@LIBDIR@@/p_actions.mk
+DOT_DEWI_DIR = .dewi
+include $(DOT_DEWI_DIR)/config.mk
+include $(DOT_DEWI_DIR)/lib/s_actions.mk
 
 all:
 	@$(PARENT_HELP)
@@ -14,9 +15,6 @@ deploy:
 
 withdraw:
 	@$(WITHDRAW_ALL_SUBDIRS)
-
-update:
-	@$(UPDATE_SUBDIRS)
 
 bs:
 	@$(DEWIFY) $(d)

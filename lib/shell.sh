@@ -15,7 +15,7 @@ find_binary() {
     case "$prog" in
         /*)
             if [ -x "$prog" ]; then
-                printf '%s' "$dir/$prog"
+                printf '%s' "$prog"
                 return 0
             fi
             ;;

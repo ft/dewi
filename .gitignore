@@ -7,3 +7,6 @@ lib/*
 !lib/shell.sh
 !lib/Dewifile.stub
 bin/bootstrap.sh
+bin/inall.sh
+dewi
+local.stamp

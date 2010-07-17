@@ -1,0 +1,138 @@
+#!@@POSIX_SH@@
+# Copyright (c) 2010
+# Frank Terbeck <ft@bewatermyfriend.org>, All rights reserved.
+# Terms for redistribution and use can be found in `LICENCE'.
+
+n=dewi
+op="$1"
+ret=0
+datadir="@@DATADIR@@"
+parent=''
+
+dp() {
+    format="$1"
+    shift
+    printf '%s: '"${format}" "$@" "$n"
+}
+
+__dot_dewi() {
+    [ -d .dewi ] && return 0
+    return 1
+}
+
+__mk_dot_dewi() {
+    mkdir .dewi || return 1
+    for dir in bin lib; do
+        mkdir ".dewi/${dir}" || return 1
+    done
+    return 0
+}
+
+__cd_parent() {
+    cd "${parent}" || return 1
+    return 0
+}
+
+__cd_dot_dewi() {
+    parent="${PWD:-..}"
+    cd .dewi || return 1
+    return 0
+}
+
+__copy_bin() {
+    if [ ! -d bin ]; then
+        dp '__copy_bin: No destination directory `bin'\'' found.\n'
+        return 1
+    fi
+    for file in "${datadir}"/bin/*; do
+        case "${file}" in
+            *~) continue ;;
+            *.in) continue ;;
+        esac
+
+        cp "${file}" bin || return 1
+    done
+    return 0
+}
+
+__copy_config() {
+    cp "${datadir}/lib/config.mk" . || return 1
+}
+
+__copy_lib() {
+    if [ ! -d lib ]; then
+        dp '__copy_lib: No destination directory `lib'\'' found.\n'
+        return 1
+    fi
+    for file in "${datadir}"/lib/*; do
+        case "${file}" in
+            *~) continue ;;
+            *.in) continue ;;
+            */config.mk) continue ;;
+        esac
+
+        cp "${file}" lib || return 1
+    done
+    return 0
+}
+
+__copy_mk_parent() {
+    cp .dewi/lib/parent.mk Makefile || return 1
+    return 0
+}
+
+__copy_mk_sub() {
+    @@POSIX_SH@@ .dewi/bin/inall.sh update || return 1
+    return 0
+}
+
+__dewi_init() {
+    if __dot_dewi; then
+        dp 'init: .dewi exist already. Did you mean `update'\''?\n'
+        ret=1
+        return
+    fi
+    __mk_dot_dewi &&
+    __cd_dot_dewi &&
+    __copy_lib &&
+    __copy_bin &&
+    __copy_config &&
+    __cd_parent &&
+    __copy_mk_parent
+    ret="$?"
+}
+
+__dewi_update() {
+    if ! __dot_dewi; then
+        dp 'init: .dewi does not exist. Did you mean `init'\''?\n'
+        ret=1
+        return
+    fi
+    __cd_dot_dewi &&
+    __copy_lib &&
+    __copy_bin &&
+    __cd_parent &&
+    __copy_mk_parent &&
+    __copy_mk_sub
+    return "$?"
+}
+
+case "$op" in
+    init)
+        __dewi_init
+        ;;
+    update)
+        __dewi_update
+        ;;
+    '')
+        dp 'No operation specified.\n'
+        ret=1
+        ;;
+    *)
+        printf '%s'
+        dp 'Unknown operation specified: `%s'\''\n' "$op"
+        ret=1
+        ;;
+esac
+
+exit "$ret"

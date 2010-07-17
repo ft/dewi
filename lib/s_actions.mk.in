@@ -3,6 +3,7 @@
 # Frank Terbeck <ft@bewatermyfriend.org>, All rights reserved.
 # Terms for redistribution and use can be found in `LICENCE'.
 
-CHILD_HELP = @@PERL5@@ @@BINDIR@@/dewi.pl child_help
-DEPLOY_SUBDIR = @@PERL5@@ @@BINDIR@@/dewi.pl deploy
-WITHDRAW_SUBDIR = @@PERL5@@ @@BINDIR@@/dewi.pl withdraw
+DOT_DEWI_DIR = ../.dewi
+CHILD_HELP = @@PERL5@@ $(DOT_DEWI_DIR)/bin/dewi.pl child_help
+DEPLOY_SUBDIR = @@PERL5@@ $(DOT_DEWI_DIR)/bin/dewi.pl deploy
+WITHDRAW_SUBDIR = @@PERL5@@ $(DOT_DEWI_DIR)/bin/dewi.pl withdraw

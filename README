@@ -9,27 +9,126 @@ Dependencies.
 
 Installation.
 
-    Say you keep all your setup files in ~/etc. Like ~/etc/zsh.
-    Now you'd put dewi into ~/etc/.dewi, chdir into it and call:
+    For the most part, dewi works autonomous. If and where the files from
+    this package are installed on a system does not matter to it. There
+    is, however, a script called `dewi', too. It help with initialising
+    and updating the `.dewi' directory in the parent directory and all
+    dewi related Makefiles in that tree. So, basically you want to be
+    able to do these operations:
 
-        % sh generate.sh "$(pwd)"
-        % sh install.sh ..
+        % dewi init
+        % dewi update
 
-    That'll create a Makefile in `..' (which would be ~/etc).
+    There are two ways of using this script. One is directly from this
+    source package, the other is installing the source package to the
+    system.
 
-    To dewi-fy a subdirectory, you put file called `Dewifile' into a
-    subdirectory and call:
 
-        % make update
+      I. From the source package
 
-    in ~/etc. That scans all subdirectories for Dewifiles and copies the
-    latest version of the subdirectory makefile into that have such a
-    Dewifile.
+    To use the dewi script directly from the source package, you need to
+    do this:
+
+        % make
+
+    Say the source package is located at `/usr/src/dewi-0.2', you would
+    now use the script directly from there:
+
+        % /usr/src/dewi-0.2/dewi <operation>
+
+    That's all.
+
+
+      II. Installation to the system.
+
+    You can also install everything to the system like you would do
+    with any other software package. These are the required steps:
+
+        % make sys
+        % make sysinstall
+
+    After that the `dewi' script should be located in `/usr/local/bin'.
+    If you would like another installation prefix, use:
+
+        % make sys prefix=/my/preferred/prefix
+        % make install prefix=/my/preferred/prefix
+
+
+      III. Documentation
+
+    The package also comes with documentation in form of txt2tags markup,
+    from which manpages are generated. In order to generate and install
+    these manpages, use these commands:
+
+        % make doc
+        % make docinstall
 
 
 Usage.
 
-    When everything is installed correctly and a Dewifile is in place,
+    In order to put directory into a dewi context, you call the command
+    `dewi init' from within that directory.
+
+    After `init' the layout looks like this (assuming this is a directory
+    that contains configuration files for applications in subdirectories,
+    which is what dewi was designed for - let's assume `~/etc/'.):
+
+        +-+-(~/etc/)
+          |
+          +-----(.dewi/)
+          |
+          +-----(Makefile)
+          |
+          +-----(emacs/)
+          |
+          +-----(fvwm/)
+          |
+          +-----(git/)
+          |
+          +-----(tmux/)
+          |
+          +-----(vim/)
+          |
+          \-----(zsh/)
+
+    But actually, only the `.dewi' directory and the `Makefile' are
+    special to dewi. You can have and sort of other content. Only when
+    a subdirectory contains a `Dewifile' and a `Makefile', dawi starts
+    to care.
+
+    Let's say none of the subdirectories contain such files, yet. If
+    you'd like to bootstrap the `emacs' subdirectory for use with dewi,
+    you can simply do this:
+
+        % make bs d=emacs
+
+    And that's that. The layout will look something like this now:
+
+        +---(root/)
+          |
+          +-----(.dewi/)
+          |
+          +-----(Makefile)
+          |
+          +--+--(emacs/)
+          |  |
+          |  +---------(Dewifile)
+          |  |
+          |  \---------(Makefile)
+          |       .
+          |       .
+          |       .
+          |       .
+          |
+          \-----(zsh/)
+
+    With the `.dewi' subdirectory, the context is self-sufficient. You
+    will *not* need the `dewi' tool at all. It's main use is to ease
+    the setup and updating of the `.dewi' directory and the involved
+    make files.
+
+
+    When everything is set up correctly and a Dewifile is in place,
     you can just do:
 
         % make deploy
@@ -46,8 +145,20 @@ Usage.
 
 Example.
 
-    Say you got your zsh configuration in ~/etc/zsh and its layout
-    looks like this:
+        TODO: Some of this should go into manual pages instead.
+
+
+    First, put ~/etc into a dewi context:
+
+        % cd ~/etc
+        % dewi init
+
+    Say you got your zsh configuration in ~/etc/zsh. To bootstrap that
+    directory for dewi to (from ~/etc):
+
+        % make bs d=zsh
+
+    Say, ~/etc/zsh's layout looks like this:
 
         ~/etc/zsh/zshrc.d/*.z       - Sub configuration files
         ~/etc/zsh/zshrc             - The main configuration file, which

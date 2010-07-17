@@ -3,18 +3,16 @@
 # Frank Terbeck <ft@bewatermyfriend.org>, All rights reserved.
 # Terms for redistribution and use can be found in `LICENCE'.
 
-. @@LIBDIR@@/shell.sh
-if [ ! -r @@LIBDIR@@/genshell.sh ]; then
-    die 'Please run generate.sh first. See README for details.'
-    exit 1
-fi
-. @@LIBDIR@@/genshell.sh
+d=".dewi/lib"
+. "$d"/shell.sh
 
+echo "inall.sh: make" "$@"
 for dir in *; do
     [ ! -d "$dir" ] && continue
     if __is_dewified "$dir"; then
     (
         cd "$dir" || exit 1
+        printf '  + "%s"\n' "$dir"
         make "$@" || exit 1
     ) || exit 1
     fi

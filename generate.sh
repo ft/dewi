@@ -5,9 +5,19 @@
 
 . ./lib/shell.sh
 
-basedir_unres=..
 posix_sh_unres=sh
 perl_unres=perl
+make_unres=make
+data_unres=.
+
+mode=
+__set_mode() {
+    if [ x"${mode}" != x ]; then
+        printf 'mode already set to `%s'\''\n' "${mode}"
+        exit 1
+    fi
+    mode="$1"
+}
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -17,12 +27,20 @@ while [ $# -gt 0 ]; do
         perl=*)
             perl_unres=${1#perl=}
             ;;
-        basedir=*)
-            basedir_unres=${1#basedir=}
+        make=*)
+            make_unres=${1#make=}
+            ;;
+        data=*)
+            data_unres=${1#data=}
+            ;;
+        here)
+            __set_mode here
+            ;;
+        sys)
+            __set_mode sys
             ;;
         *)
             printf 'unknown parameter: `%s'\''\n' "$1"
-            printf 'See the `README'\'' file for details.\n'
             exit 1
             ;;
     esac
@@ -39,38 +57,45 @@ die_not_found() {
     # does not return
 }
 
-basedir=$(resolv_path "$basedir_unres")
-die_not_found "$?" basedir "$basedir_unres"
+make=$(find_binary "$make_unres")
+die_not_found "$?" make "$make_unres"
 posix_sh=$(find_binary "$posix_sh_unres")
 die_not_found "$?" posix_sh "$posix_sh_unres"
 perl=$(find_binary "$perl_unres")
 die_not_found "$?" perl "$perl_unres"
-bindir=$(resolv_path "./bin")
-die_not_found "$?" bindir "./bin"
-libdir=$(resolv_path "./lib")
-die_not_found "$?" libdir "./lib"
+
+case "$data_unres" in
+    /*)
+        datadir="$data_unres"
+        ;;
+    *)
+        datadir=$(resolv_path "$data_unres")
+        die_not_found "$?" datadir "$data_unres"
+        ;;
+esac
 
 printf '%s\n' "Configuration:"
+printf '  make:     %s\n' "$make"
 printf '  perl:     %s\n' "$perl"
 printf '  posix_sh: %s\n' "$posix_sh"
-printf '  basedir:  %s\n' "$basedir"
-printf '%s\n' "dewi locations:"
-printf '  bindir:   %s\n' "$bindir"
-printf '  libdir:   %s\n' "$libdir"
+printf '  datadir:  %s\n' "$datadir"
+printf '\n'
 
 __generate() {
     "$perl" -npe '
-        s!\@\@BASEDIR\@\@!'"$basedir"'!;
-        s!\@\@BINDIR\@\@!'"$bindir"'!;
-        s!\@\@LIBDIR\@\@!'"$libdir"'!;
+        s!\@\@DATADIR\@\@!'"$datadir"'!;
+        s!\@\@BIN_MAKE\@\@!'"$make"'!;
         s!\@\@PERL5\@\@!'"$perl"'!;
         s!\@\@POSIX_SH\@\@!'"$posix_sh"'!;
     '
 }
 
 printf '%s\n' "Generating files:"
-for file in "$bindir"/*."in" "$libdir"/*."in"; do
+for file in "dewi.in" bin/*."in" lib/*."in"; do
     gen_file=${file%.in}
     printf '  %s\n' "$gen_file"
     __generate < "$file" > "$gen_file"
 done
+chmod +x "./dewi"
+
+exit 0
