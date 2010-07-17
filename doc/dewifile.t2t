@@ -1,0 +1,22 @@
+DEWIFILE
+
+Jul, 2010
+
+%!target: man
+%!postproc(man): "^(\.TH.*) 1 "  "\1 5 "
+
+
+= NAME =
+Dewifile - dewi(7) configuration
+
+
+= DESCRIPTION =
+
+
+= SEE ALSO =
+dewi(7), dewi(1)
+
+
+= COPYRIGHT =
+Copyright (c) 2010 Frank Terbeck <ft@bewatermyfriend.org>, All rights
+reserved. Terms for redistribution and use can be found in doc/LICENCE.

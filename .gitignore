@@ -8,5 +8,8 @@ lib/*
 !lib/Dewifile.stub
 bin/bootstrap.sh
 bin/inall.sh
+doc/*.1
+doc/*.5
+doc/*.7
 dewi
 local.stamp

@@ -1,0 +1,21 @@
+DEWI
+
+Jul, 2010
+
+%!target: man
+
+
+= NAME =
+dewi - maintenance helper for dewi(7)
+
+
+= DESCRIPTION =
+
+
+= SEE ALSO =
+dewi(7), dewifile(5)
+
+
+= COPYRIGHT =
+Copyright (c) 2010 Frank Terbeck <ft@bewatermyfriend.org>, All rights
+reserved. Terms for redistribution and use can be found in doc/LICENCE.

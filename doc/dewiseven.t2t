@@ -1,0 +1,22 @@
+DEWIFILE
+
+Jul, 2010
+
+%!target: man
+%!postproc(man): "^(\.TH.*) 1 "  "\1 7 "
+
+
+= NAME =
+dewi - personal configuration file deploy/withdraw tool
+
+
+= DESCRIPTION =
+
+
+= SEE ALSO =
+dewi(1), dewifile(5)
+
+
+= COPYRIGHT =
+Copyright (c) 2010 Frank Terbeck <ft@bewatermyfriend.org>, All rights
+reserved. Terms for redistribution and use can be found in doc/LICENCE.
