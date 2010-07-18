@@ -155,7 +155,8 @@ sub register {
     my $type = ref $arg;
 
     if ($type eq '') {
-        my $hr = { glob => "$arg" };
+        my $hr = { glob      => "$arg",
+                   transform => \&makedotfile};
         __register_defaults($hr);
         __register($hr);
     } elsif ($type eq 'HASH') {
@@ -171,7 +172,7 @@ sub register {
 }
 
 # Dewifile reader
-sub read_dewifile {
+sub __read_dewifile {
     my ($file, $d, $rc);
 
     our $NAME = $main::NAME;
@@ -279,7 +280,7 @@ sub get_opt_bool {
 
     $v = get_opt($key);
     return 0 if (!defined $v || $v eq 'no' || $v eq 'no_thanks' || $v eq 'off'
-        || $v eq 'false' || $v eq '1');
+        || $v eq 'false' || $v eq '0');
     return 1 if ($v eq 'yes' || $v eq 'yes_please' || $v eq 'on'
         || $v eq 'true' || $v eq '1');
 
@@ -620,7 +621,7 @@ sub main {
     defaults();
 
     if ($mode eq 'deploy' || $mode eq 'withdraw') {
-        DewiFile::read_dewifile() or return 1;
+        DewiFile::__read_dewifile() or return 1;
     }
 
     if (get_opt_bool('dryrun')) {

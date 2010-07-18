@@ -7,6 +7,9 @@ all: $(PAGES)
 clean:
 	rm -f *.1 *.5 *.7
 
+dewi.7: dewiseven.t2t
+	txt2tags --target man -o- $< | sed -e '/^$$/d' -e 's/^\\e$$//' > $@
+
 .t2t.1:
 	txt2tags --target man -o- $< | sed -e '/^$$/d' -e 's/^\\e$$//' > $@
 
@@ -14,9 +17,6 @@ clean:
 	txt2tags --target man -o- $< | sed -e '/^$$/d' -e 's/^\\e$$//' > $@
 
 .t2t.7:
-	txt2tags --target man -o- $< | sed -e '/^$$/d' -e 's/^\\e$$//' > $@
-
-dewi.7: dewiseven.t2t
 	txt2tags --target man -o- $< | sed -e '/^$$/d' -e 's/^\\e$$//' > $@
 
 .PHONY: all clean

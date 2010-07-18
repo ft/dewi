@@ -11,6 +11,274 @@ dewi - personal configuration file deploy/withdraw tool
 
 
 = DESCRIPTION =
+People often keep their important configuration files in a central place,
+like `//~/etc//', where each sub-directory keeps the configuration files
+for one application (often kept in distributed version control, like
+//git//, //mercurial// or //bzr//).
+
+So basically, the directories layout may look like this:
+\
+```
+    +-+-(~/etc/)
+      |
+      +-----(emacs/)
+      |
+      +-----(fvwm/)
+      |
+      +-----(git/)
+      |
+      +-----(tmux/)
+      |
+      +-----(vim/)
+      |
+      \-----(zsh/)
+```
+
+Now, in order to use such configurations, their files need to be deployed
+to the user's home directory. The file names may need to be changed, too.
+For example, `//~/etc/zsh/zshrc//' needs to be deployed as `//~/.zshrc//'.
+
+The idea to to be able to do the following:
+\
+```
+    % cd ~/etc/zsh
+    % make deploy
+```
+
+And have the zsh configuration files deployed to the user's home directory
+automatically. A complementary make target `//withdraw//' may be used to
+remove the previously deployed files from the home directory again.
+
+It should also be possible to do ```make deploy``` in `//~/etc//' to
+conveniently call the `//deploy//' target in all dewi-controlled
+sub-directories.
+
+In order to be able to do that, the dewi system must be made available in
+the central directory. //dewi//(1) is the system's maintenance tool, which
+is supposed to help the user to initialise and update the system's files
+easily.
+
+To initialise the system, you would do:
+\
+```
+    % cd ~/etc
+    % dewi init
+```
+
+That would add a `//.dewi//' sub-directory and a `//Makefile//', so now
+the directory layout would look like this:
+
+\
+```
+    +-+-(~/etc/)
+      |
+      +-----(.dewi/)
+      |
+      +-----(Makefile)
+      |
+      +-----(emacs/)
+      |
+      +-----(fvwm/)
+      |
+      +-----(git/)
+      |
+      +-----(tmux/)
+      |
+      +-----(vim/)
+      |
+      \-----(zsh/)
+```
+
+Not all sub-directories need to be dewi-controlled. In fact, only
+directories, which contain a `//Dewifile//' and a `//Makefile//' are
+considered by the system.
+
+In order to create these files you need to "bootstrap" the subdirectory
+like this (the `//emacs//' sub-directory in this case):
+\
+```
+    % cd ~/etc
+    % make bs d=emacs
+```
+The layout will look something like this now:
+\
+```
+    +---(root/)
+        |
+        +-----(.dewi/)
+        |
+        +-----(Makefile)
+        |
+        +--+--(emacs/)
+        |  |
+        |  +---------(Dewifile)
+        |  |
+        |  \---------(Makefile)
+        |       .
+        |       .
+        |       .
+        |       .
+        |
+        \-----(zsh/)
+```
+
+Now you need to fill the file `//~/etc/emacs/Dewifile//' with suitable
+content, and then you will be able to use the `//deploy//' and
+`//withdraw//' targets.
+
+If you upgrade your copy of dewi and wish to update the .dewi directory
+and the systems Makefiles, you can use the //dewi//(1) tool again:
+\
+```
+    % cd ~/etc
+    % dewi update
+```
+
+
+= DEPLOYMENT METHODS =
+**dewi** is able to deploy configurations using different methods. The
+default is `//copy//' which works with every filesystem.
+
+Here is a list of supported methods:
+
+: **copy**
+Check whether the destination file is older than the source and if so,
+copy the source file to its destination.
+
+: **force_copy**
+Like `//copy//', but does not check for age. It always copies all source
+files.
+
+: **hardlink**
+Instead of copying, create hardlinks.
+
+Note that this may cause problems if you are using version control for your
+configuration files (like git with using `rebase').
+
+: **symlink**
+Instead of copying, create symbolic links.
+
+
+= EXAMPLE =
+Let's assume, the configuration file directory is `//~/etc//' and we want
+to deploy our zsh configuration which is located in the `//zsh//'
+sub-directory.
+
+First, put ~/etc into a dewi context:
+\
+```
+    % cd ~/etc
+    % dewi init
+```
+
+Say you got your zsh configuration in ~/etc/zsh. To bootstrap that
+directory for dewi to (from ~/etc):
+\
+```
+    % make bs d=zsh
+```
+
+Say, ~/etc/zsh's layout looks like this:
+
+: **~/etc/zsh/zshrc.d/*.z**
+Sub configuration files
+
+: **~/etc/zsh/zshrc**
+The main configuration file, which loads the others.
+
+
+The corresponding Dewifile:
+\
+```
+    register({ glob        => 'zshrc',
+               method      => 'copy',
+               destination => '~/',
+               transform   => sub { return '.' . $_[0]; }});
+    register({ glob        => 'zshrc.d/*.z',
+               method      => 'copy',
+               destination => '~/.zshrc.d',
+               transform   => sub { return $_[0]; }});
+```
+
+Some parts are optinal. Actually, all except for "glob" are optional.
+You could even just pass a scalar to `register', in which case that
+value is used as the `glob' part. So, if you'd have a file
+`~/etc/zsh/zshrc' and only wanted to deploy that, you'd do:
+\
+```
+    register('zshrc');
+```
+
+That means deploy the file `zshrc' with default values for all other
+parameters, except for `//transform//' which will be set to a reference
+to `//makedotfile//'. That way the above line would deploy the file as
+`//~/.zshrc//'.
+
+If the `glob' parameter is a coderef, you can have absolute control
+over how filename generation is done. The coderef is expected to
+return a array of file names.
+
+With all that knowledge, the previous example can be boiled down to
+this:
+\
+```
+    register('zshrc');
+    register({ glob        => 'zshrc.d/*.z',
+               destination => '~/.zshrc.d', });
+```
+
+Easy enough.
+
+Now suppose, you got a few files named `z*' instead of just `zshrc',
+like `zlogout', `zprofile', `zshenv' and `zshrc'. So, your layout
+not looks like this:
+
+: **~/etc/zsh/zshrc.d/*.z**
+Sub configuration files
+: **~/etc/zsh/zshrc**
+The main configuration file
+: **~/etc/zsh/zshenv**
+Some other file
+: **~/etc/zsh/zprofile**
+And another
+: **~/etc/zsh/zlogout**
+And a final one
+
+The problem here is that you cannot just glob for `z*' because that
+would match `zshrc.d', too, which is a directory.
+
+The trick is to use a coderef to do some filtering. When you use
+a coderef, you can use the `globarg' parameter to hand an argument
+to the coderef.
+\
+```
+    sub glob_just_files {
+        my ($glob) = @_;
+        return grep { -f } bsd_glob($glob);
+    }
+    register({ glob        => \&glob_just_files,
+               globarg     => 'z*',
+               transform   => \&makedotfile});
+    register({ glob        => 'zshrc.d/*.z',
+               destination => '~/.zshrc.d', });
+```
+
+For convenience, dewi defines some coderefs for you. Well, currently
+only one:
+
+: **regularfiles**
+Like the default glob, but only match regular files. Expects `globarg'
+to be a string scalar which holds the desired glob. Like "*.txt".
+
+With that you can now do this:
+\
+```
+    register({ glob        => \&regular_files,
+               globarg     => 'z*',
+               transform   => \&makedotfile});
+    register({ glob        => 'zshrc.d/*.z',
+               destination => '~/.zshrc.d', });
+```
 
 
 = SEE ALSO =

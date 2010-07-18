@@ -11,6 +11,162 @@ Dewifile - dewi(7) configuration
 
 
 = DESCRIPTION =
+Each subdirectory of a central dewi directory needs a files called
+`//Dewifile//', which instructs which files are to be deployed (and
+maybe later withdrawn, too) and how.
+
+The `//Dewifile//' is a //Perl script// to allow for maximum control
+of the process. It features a simple, yet powerful API for registering
+files with dewi.
+
+
+= API =
+The API is quite simple. Mostly, you will be using the `//register()//'
+and `//set_opt()//' functions. The latter for setting options, such as
+`//debug//', `//verbose//' and `//dryrun//'. Below is a description of
+the official API. There may be a number of functions available, that
+start with two leading underscores. These functions are **not** meant
+to be called by the user. These functions may not be useful to the user
+and their behaviour may change.
+
+
+== Main API ==
+: **debug(** //PRINT_LIKE_ARGUMENTS// **)**
+Like Perl's **print** subroutine, but only produces output if the
+`//debug//' option is set.
+
+: **dewifile_is_empty()**
+Prints a message telling the user that the `//Dewifile//' needs to be
+filled with suitable content. This is the function that is inserted
+into the `//Dewifile//' created by "**dewi update**".
+
+: **end()**
+This function does nothing, but it returns a true value. You can use it
+at the very end of a `//Dewifile//' so that Perl can source it without
+errors and warnings.
+
+: **get_opt(** //OPTION_NAME// **)**
+Returns the value of the option described by //OPTION_NAME//.
+
+: **get_opt_bool(** //OPTION_NAME// **)**
+Returns the value of the option described by //OPTION_NAME//, interpreted
+as a boolean value (**no**, **no_thanks**, **off**, **false** and **0**
+are interpreted as //false//; **yes**, **yes_please**, **on**, **true**
+and **1** are interpreted as //true//. Other values are interpreted as
+//false//, too, but will trigger a warning).
+
+: **register(** //HASHREF// | //STRING_SCALAR// **)**
+This is the major file registration function. See `THE REGISTER FUNCTION'
+below for details.
+
+: **set_opt(** //OPTION_NAME//, //OPTION_VALUE// **)**
+Set the option described by //OPTION_NAME// to the value //OPTION_VALUE//.
+
+: **verbose(** //PRINT_LIKE_ARGUMENTS// **)**
+Like Perl's **print** subroutine, but only produces output if the
+`//verbose//' option is set.
+
+
+== Predefined Globbing Code ==
+These functions are to be used as coderef values to the `//register()//'
+function's `**glob**' argument. The `**globarg**' parameter is passed to
+the globbing function's first and only argument.
+
+: **regularfiles(** //GLOB_STRING// **)**
+Matches only regular files, that match //GLOB_STRING//.
+
+
+== Predefined Transform Code ==
+These functions are meant to be used as coderef values of `//register()//'
+function's `**transform**' argument. The file name in question is passed to
+this the function's first and only argument.
+
+: **makedotfile(** //INPUT_STRING// **)**
+Prefixes the filename with a dot. For example `//foo//' turns into
+`//.foo//'.
+
+: **notransform(** //INPUT_STRING// **)**
+Does no transformation at all. This is the default transformation.
+
+
+= THE REGISTER FUNCTION =
+The `//register()//' function is the main facility to tell **dewi** about
+files it should deploy. It can be called in two ways: with a
+**scalar string** as it's sole argument; and with a **hashref** as its
+only argument which gives detailed control over how **dewi** will behave.
+
+== hashref argument ==
+The hashref call basically looks like this:
+\
+```
+    register({ key0        => 'value0',
+               key1        => 'value1',
+               ...
+               keyN        => "valueN"});
+```
+
+Possible keys are:
+
+: **destination**
+Where to put the files registered in this call. Defaults to the user's
+home directory.
+
+: **glob**
+This may either be a string or a coderef. If it is a string, it is used as
+a globbing pattern to match certain files. If it is a coderef, the function
+the reference points to is called with the **globarg** key's value as its
+argument.
+
+This is the only key that has **no default value**. It must be specified.
+
+: **globarg**
+If the **glob** key's value is a coderef, the value of this key is handed
+over to the referenced function as its only argument.
+
+: **transform**
+The filename transformation is handled by the function referenced by this
+key's value, which has to be a coderef. It defaults to a reference to
+`//notransform//' which means, that no transformation is done per default.
+
+: **method**
+This key has to be a string which defined how the registered file should
+be deployed by "**make deploy**". This defaults to `//copy//'. See
+dewi(7) for details about the different possible methods.
+
+
+A full example could look like this:
+\
+```
+    register({ glob        => 'zshrc',
+               method      => 'symlink',
+               transform   => \&makedotfile});
+```
+
+== string argument ==
+In **very** simple cases, you may only want to copy one file as a dotfile
+to the user's home directory. In such a case, you may do this:
+\
+```
+    register('zshrc');
+```
+
+That will use default values for all previously described keys, except for
+`//transform//' which will be set to `//\&makedotfile//'. So, the above
+register call will result in the file `//zshrc//' being **copied** to
+`//~/.zshrc//'.
+
+
+= OPTIONS =
+: **debug**
+Be very noisy during execution. This provides details during the execution
+of the `//Dewifile//' as well as during the file deployment/withdrawal.
+
+: **dryrun**
+Run, but do not actually do anything. This is useful for writing Dewifiles
+in connection with either the `//verbose//' or the `//debug//' option.
+
+: **verbose**
+Emit status messages during the file deployment/withdrawal.
 
 
 = SEE ALSO =

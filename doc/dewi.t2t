@@ -10,6 +10,17 @@ dewi - maintenance helper for dewi(7)
 
 
 = DESCRIPTION =
+Dewi is a system for deploying personal configuration files from a central
+place to a user's home directory. The `dewi' command is a helper for eased
+maintenance of the system.
+
+
+= SUBCOMMANDS =
+: **init**
+Initialise a directory as a central dewi directory.
+
+: **update**
+Update the dewi system of a previously initialised directory.
 
 
 = SEE ALSO =
