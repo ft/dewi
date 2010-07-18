@@ -1,5 +1,7 @@
 prefix = /usr/local
 datadir = $(prefix)/share/dewi
+mandir = $(prefix)/share/man
+docdir = $(prefix)/share/doc/dewi
 
 bin_make = make
 bin_perl = perl
@@ -17,12 +19,16 @@ sys:
 
 install:
 	@[ ! -e "$(local_stamp)" ] || (printf 'Do not call "install" in non-sys builds.\n'; exit 1;)
-	@$(bin_sh) ./install.sh all-but-doc
+	@$(bin_sh) ./install.sh prefix="$(prefix)" datadir="$(datadir)" docdir="$(docdir)" mandir="$(mandir)" all-but-doc
 
 doc:
 	@(cd doc && $(MAKE))
 
 install-doc:
-	@$(bin_sh) ./install.sh doc
+	@$(bin_sh) ./install.sh prefix="$(prefix)" datadir="$(datadir)" docdir="$(docdir)" mandir="$(mandir)" doc
+
+uninstall:
+	@$(bin_sh) ./install.sh prefix="$(prefix)" datadir="$(datadir)" docdir="$(docdir)" mandir="$(mandir)" uninstall
+
 
 .PHONY: all doc install install-doc sys
