@@ -5,7 +5,7 @@
 
 DOT_DEWI_DIR = .dewi
 include $(DOT_DEWI_DIR)/config.mk
-include $(DOT_DEWI_DIR)/lib/s_actions.mk
+include $(DOT_DEWI_DIR)/lib/p_actions.mk
 
 all:
 	@$(PARENT_HELP)
@@ -16,8 +16,5 @@ deploy:
 withdraw:
 	@$(WITHDRAW_ALL_SUBDIRS)
 
-bs:
-	@$(DEWIFY) $(d)
-
 -include local_dewi.mk
-.PHONY: all bs deploy update withdraw
+.PHONY: all deploy update withdraw

@@ -316,8 +316,6 @@ sub parent_help {
 "                a working dewi setup.\n".
 "    withdraw  - Withdraw files from every subdirectory with a\n".
 "                working dewi setup.\n".
-"    bs        - Bootstrap a subdirectory for dewi. Example:\n".
-"                make bs d=thissubdirectory\n".
 "    update    - Update the dewi-related Makefiles.\n".
 "    all       - Display this help text.\n";
     help_footer();

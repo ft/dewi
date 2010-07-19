@@ -16,6 +16,15 @@ maintenance of the system.
 
 
 = SUBCOMMANDS =
+: **add** //<SUB-DIRECTORIES>//
+Bootstrap one or more sub-directories. If there is only one parameter and
+that parameter is a dot ('**.**'), then all sub-directories will be
+bootstrapped.
+\
+Sub-directories that already have been boostrapped are skipped.
+Sub-directories that contain a `**Makefile**' but no `**Dewifile**' will
+be left untouched.
+
 : **init**
 Initialise a directory as a central dewi directory.
 

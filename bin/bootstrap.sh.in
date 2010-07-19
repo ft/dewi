@@ -1,4 +1,4 @@
-#!/bin/sh
+#!@@POSIX_SH@@
 # Copyright (c) 2010
 # Frank Terbeck <ft@bewatermyfriend.org>, All rights reserved.
 # Terms for redistribution and use can be found in `LICENCE'.
@@ -7,8 +7,8 @@ d=".dewi/lib"
 . "$d"/shell.sh
 
 if [ "$#" != 1 ]; then
-    printf 'Usage: make bs d=foo\n'
-    printf '  ...where `foo'\'' is the directory you want to bootstrap.\n'
+    printf 'Usage: bootstrap.sh <dir>\n'
+    printf '  ...where `<dir>'\'' is the directory you want to bootstrap.\n'
     printf '  Only *one* directory per run is permitted.\n'
     exit 1
 fi
@@ -24,13 +24,18 @@ if __is_dewified "$dir"; then
     exit 0
 fi
 
+if [ -e "$dir"/Makefile ]; then
+    printf 'Makefile exists in `%s'\''. Giving up.\n' "$dir"
+    exit 0
+fi
+
 (
     cd "$dir" || exit 1
     printf 'Bootstrapping `%s'\'':\n' "$dir"
     printf '  Installing `Dewifile'\''...\n'
-    cp -- "$libdir"/Dewifile.stub Dewifile || exit 1
+    cp -- ../.dewi/lib/Dewifile.stub Dewifile || exit 1
     printf '  Installing `Makefile'\''...\n'
-    cp -- "$libdir"/child.mk Makefile || exit 1
+    cp -- ../.dewi/lib/child.mk Makefile || exit 1
     exit 0
 )
 if [ "$?" != "0" ]; then

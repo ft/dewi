@@ -5,9 +5,11 @@
 
 n=dewi
 op="$1"
+shift
 ret=0
 datadir="@@DATADIR@@"
 parent=''
+posix_sh="@@POSIX_SH@@"
 
 dp() {
     format="$1"
@@ -117,7 +119,31 @@ __dewi_update() {
     return "$?"
 }
 
+__dewi_add() {
+    "${posix_sh}" .dewi/bin/bootstrap.sh "$1"
+}
+
 case "$op" in
+    add)
+        if ! __dot_dewi; then
+            dp 'add: .dewi does not exist. Not a dewi parent directory.\n'
+            ret=1
+            return
+        fi
+        if [ "$#" = 0 ]; then
+            dp 'usage: dewi add <subdirectory>\n'
+            ret=1
+        elif [ "$#" = 1 ] && [ "$1" = '.' ]; then
+            for dir in ./*; do
+                [ ! -d "${dir}" ] && continue
+                __dewi_add "${dir}"
+            done
+        else
+            for dir in "$@"; do
+                __dewi_add "${dir}"
+            done
+        fi
+        ;;
     init)
         __dewi_init
         ;;

@@ -98,7 +98,7 @@ like this (the `//emacs//' sub-directory in this case):
 \
 ```
     % cd ~/etc
-    % make bs d=emacs
+    % dewi add emacs
 ```
 The layout will look something like this now:
 \
@@ -175,7 +175,7 @@ Say you got your zsh configuration in ~/etc/zsh. To bootstrap that
 directory for dewi to (from ~/etc):
 \
 ```
-    % make bs d=zsh
+    % dewi add zsh
 ```
 
 Say, ~/etc/zsh's layout looks like this:
