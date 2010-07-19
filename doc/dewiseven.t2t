@@ -263,6 +263,7 @@ to the coderef.
                destination => '~/.zshrc.d', });
 ```
 
+
 For convenience, dewi defines some coderefs for you. Well, currently
 only one:
 
