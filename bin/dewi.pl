@@ -230,7 +230,7 @@ use File::Spec;
 our $NAME = 'dewi';
 our $MAJOR_VERSION = 0;
 our $MINOR_VERSION = 2;
-our $SUFFIX_VERSION = '';
+our $SUFFIX_VERSION = '+git';
 our $VERSION = $MAJOR_VERSION . '.' . $MINOR_VERSION . $SUFFIX_VERSION;
 
 my (%opts);
