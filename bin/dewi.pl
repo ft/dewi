@@ -11,6 +11,7 @@ use warnings qw(all);
 use English '-no_match_vars';
 use File::Glob qw{ bsd_glob };
 use File::Spec;
+use File::Basename;
 
 my $reg_calls = 0;
 
@@ -48,6 +49,38 @@ sub regularfiles {
     my ($glob) = @_;
 
     return grep { -f } bsd_glob($glob);
+}
+
+# predefined `post-glob' code
+sub remove_tilde {
+    # throw away stuff that matches "*~"
+    my (@ret);
+
+    foreach my $file (@_) {
+        if ($file !~ m/~$/) {
+            push @ret, $file
+        } else {
+            debug("Weeding out backup file: `$file'\n");
+        }
+    }
+
+    return @ret;
+}
+
+sub remove_hashes {
+    # throw away stuff that matches "#*#"
+    my (@ret);
+
+    foreach my $file (@_) {
+        my $name = basename($file);
+        if ($name !~ m/^#.+#$/) {
+            push @ret, $file
+        } else {
+            debug("Weeding out temporary file: `$file'\n");
+        }
+    }
+
+    return @ret;
 }
 
 # predefined `transform' code
@@ -100,6 +133,12 @@ sub __register_defaults {
         "                        Call number $reg_calls.\n";
     }
 
+    if (defined $h->{post_glob} && !defined &{ $h->{post_glob} }) {
+        die
+        "register(): Unknown coderef in `post_glob'.\n".
+        "                        Call number $reg_calls.\n";
+    }
+
     if (!defined $h->{globarg}) {
         $h->{globarg} = '';
         debug("register(): Setting default `globarg': (empty string)\n");
@@ -116,6 +155,9 @@ sub __register {
         @files = $h->{glob}->($h->{globarg});
     } else {
         @files = bsd_glob($h->{glob});
+    }
+    if (defined $h->{post_glob} && ref $h->{post_glob} eq 'CODE') {
+        @files = $h->{post_glob}->(@files);
     }
 
     $h->{destination} =~ s!^~!$ENV{HOME}!;
