@@ -281,6 +281,9 @@ With that you can now do this:
                destination => '~/.zshrc.d', });
 ```
 
+For more details and documentation of the full `//Dewifile//' API, see
+the dewifile(5) manual page.
+
 
 = SEE ALSO =
 dewi(1), dewifile(5)

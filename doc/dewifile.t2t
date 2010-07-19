@@ -76,6 +76,30 @@ the globbing function's first and only argument.
 Matches only regular files, that match //GLOB_STRING//.
 
 
+== Predefined Post-Glob Code ==
+The functions described in this sub-section are supposed to be used as
+coderef values to the `//register()//' function's `**post_glob**'
+argument. If you need to use more than one, you can easily chain them
+like this:
+\
+```
+    register({ glob        => 'zshrc.d/*',
+               method      => 'copy',
+               destination => '~/.zshrc.d',
+               post_glob   => sub {
+                    return remove_hashes( remove_tilde(@_) );
+               }});
+```
+
+: **remove_tilde**
+Many editors create backup files in the form of **foo.txt~**. Using this
+function as the //post_glob// parameter removes these files.
+
+: **remove_hashes**
+Some editors (like emacs) create files like **#foo.txt#** while running.
+This function as the //post_glob// parameter removes these.
+
+
 == Predefined Transform Code ==
 These functions are meant to be used as coderef values of `//register()//'
 function's `**transform**' argument. The file name in question is passed to
@@ -122,6 +146,12 @@ This is the only key that has **no default value**. It must be specified.
 : **globarg**
 If the **glob** key's value is a coderef, the value of this key is handed
 over to the referenced function as its only argument.
+
+: **post_glob**
+This key's value may be a coderef to a subroutine that let's you modify the
+list of files returned by the globbing mechanism. The referenced subroutine
+gets all globbed file names as arguments and must return an array of file
+names. This key has no default value.
 
 : **transform**
 The filename transformation is handled by the function referenced by this
