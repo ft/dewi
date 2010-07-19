@@ -6,12 +6,16 @@ Dependencies.
     Dewi requires Perl5, a posix sh and a make implementation (GNU and
     BSD should both work).
 
+    For building the documentation, the txt2tags[1] package is required.
+
+    [1] <http://txt2tags.sourceforge.net/>
+
 
 Installation.
 
     For the most part, dewi works autonomous. If and where the files from
     this package are installed on a system does not matter to it. There
-    is, however, a script called `dewi', too. It help with initialising
+    is, however, a script called `dewi', too. It helps with initialising
     and updating the `.dewi' directory in the parent directory and all
     dewi related Makefiles in that tree. So, basically you want to be
     able to do these operations:
@@ -45,7 +49,7 @@ Installation.
     with any other software package. These are the required steps:
 
         % make sys
-        % make sysinstall
+        % make install
 
     After that the `dewi' script should be located in `/usr/local/bin'.
     If you would like another installation prefix, use:
@@ -61,7 +65,7 @@ Installation.
     these manpages, use these commands:
 
         % make doc
-        % make docinstall
+        % make install-doc
 
 Usage.
 
