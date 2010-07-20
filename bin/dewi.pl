@@ -44,6 +44,31 @@ sub get_opt_bool {
     return main::get_opt_bool(@_);
 }
 
+# helpers
+
+sub __expand_dir {
+    my ($str) = @_;
+
+    $str =~ s!^~!$ENV{HOME}!;
+    $str =~ s/\/+$//;
+    return $str;
+}
+
+# request empty directories
+
+sub deploy_directory {
+    if ($#_ != 0) {
+        die "usage: deploy_directory('directory_name');\n";
+    }
+    my ($dir) = @_;
+
+    my $new = {};
+    $new->{destination} = __expand_dir($dir);
+    $new->{deploydir} = 'yes';
+    debug("deploy_directory(): \"" . $new->{destination} . "\"\n");
+    push @main::regfiles, $new;
+}
+
 # predefined `glob' code
 sub regularfiles {
     my ($glob) = @_;
@@ -160,8 +185,7 @@ sub __register {
         @files = $h->{post_glob}->(@files);
     }
 
-    $h->{destination} =~ s!^~!$ENV{HOME}!;
-    $h->{destination} =~ s/\/+$//;
+    $h->{destination} = __expand_dir($h->{destination});
     foreach my $path (@files) {
         my $new = {};
         my ($volume,$directories,$file) = File::Spec->splitpath( $path );
@@ -606,6 +630,9 @@ sub deploy_files {
     print "Deploying $base...\n";
     foreach my $f (@regfiles) {
         ensure_dir($f->{destination});
+        if (defined $f->{deploydir} && $f->{deploydir} eq 'yes') {
+            next;
+        }
         $methods{$f->{method}}->(
             $f->{path},
             $f->{mergedname})
@@ -620,6 +647,9 @@ sub withdraw_files {
     foreach my $f (@regfiles) {
         if (!defined $dests{$f->{destination}}) {
             $dests{$f->{destination}} = 'xxx';
+        }
+        if (defined $f->{deploydir} && $f->{deploydir} eq 'yes') {
+            next;
         }
         if (!-e $f->{mergedname}) {
             verbose("  withdraw: " . $f->{mergedname}
@@ -645,6 +675,8 @@ sub withdraw_files {
             verbose(
                 "  withdraw: rmdir($d) (empty directory)\n");
             xrmdir($d);
+        } else {
+            verbose("  withdraw: `$d' is not empty. Leaving it alone.\n");
         }
     }
 }

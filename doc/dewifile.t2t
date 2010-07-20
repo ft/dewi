@@ -35,6 +35,14 @@ and their behaviour may change.
 Like Perl's **print** subroutine, but only produces output if the
 `//debug//' option is set.
 
+: **deploy_directory(** //DIRECTORY_NAME// **)**
+Register a directory name for creation during deployment and removal
+during withdrawal (if the directory is empty during withdrawal, it is left
+alone). This allows for the creation of empty directories during deployment.
+\
+The same expansions as with the //register()// function's `**destination**'
+parameter is performed on the //DIRECTORY_NAME// argument.
+
 : **dewifile_is_empty()**
 Prints a message telling the user that the `//Dewifile//' needs to be
 filled with suitable content. This is the function that is inserted
