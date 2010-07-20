@@ -161,7 +161,7 @@ sub __register {
     }
 
     $h->{destination} =~ s!^~!$ENV{HOME}!;
-    $h->{destination} = Cwd::realpath($h->{destination});
+    $h->{destination} =~ s/\/+$//;
     foreach my $path (@files) {
         my $new = {};
         my ($volume,$directories,$file) = File::Spec->splitpath( $path );
