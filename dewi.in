@@ -14,7 +14,7 @@ posix_sh="@@POSIX_SH@@"
 dp() {
     format="$1"
     shift
-    printf '%s: '"${format}" "$@" "$n"
+    printf '%s: '"${format}" "$n" "$@"
 }
 
 __dot_dewi() {
@@ -123,6 +123,19 @@ __dewi_add() {
     "${posix_sh}" .dewi/bin/bootstrap.sh "$1"
 }
 
+__realpath() {
+    (cd "$1" && pwd)
+}
+
+basedir="$(pwd)"
+realbasedir="${basedir}"
+while [ "${realbasedir}" != '/' ]; do
+    [ -d "${basedir}/.dewi" ] && break
+    basedir=${basedir}/..
+    realbasedir="$(__realpath "${basedir}")"
+done
+dewiroot="${realbasedir}"
+
 case "$op" in
     add)
         if ! __dot_dewi; then
@@ -145,17 +158,17 @@ case "$op" in
         fi
         ;;
     init)
-        if [ -d ../.dewi ]; then
-            dp 'Parent (..) has a `.dewi'\'' directory. Giving up.\n'
+        if [ "${dewiroot}" != '/' ]; then
+            dp 'A parent (%s) has a `.dewi'\'' directory. Giving up.\n' "${dewiroot}"
         else
             __dewi_init
         fi
         ;;
     update)
-        if [ -d ../.dewi ]; then
-            dp 'Parent (..) has a `.dewi'\'' directory.\n'
+        if [ "${dewiroot}" != '/' ] && [ "$(pwd)" != "${dewiroot}" ]; then
+            dp 'A parent (%s) has a `.dewi'\'' directory.\n' "${dewiroot}"
             dp 'Assuming you wanted to run `update'\'' there.\n'
-            cd .. || exit 1
+            cd "${dewiroot}" || exit 1
         fi
         __dewi_update
         ;;

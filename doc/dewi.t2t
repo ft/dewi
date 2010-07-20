@@ -28,16 +28,16 @@ be left untouched.
 : **init**
 Initialise a directory as a central dewi directory.
 \
-This fails if called from an immediate sub-directory of a dewi parent
-directory (ie, the parent directory contains a `//.dewi//' directory.
+This fails if called from a sub-directory of a dewi parent directory
+(ie, one parent directory contains a `//.dewi//' directory.
 
 : **update**
 Update the dewi system of a previously initialised directory.
 \
-If this sub-command is called from a directory whose parent directory
-contains a `//.dewi//' directory, then //dewi(1)// assumes you wanted
-to call `//update//' in that parent directory and calls this
-sub-command there.
+If one parent directory of the current working directory contains
+a `//.dewi//' directory, then //dewi(1)// assumes you wanted to
+call `//update//' in that parent directory and calls this sub-command
+there.
 
 
 = SEE ALSO =
