@@ -145,9 +145,18 @@ case "$op" in
         fi
         ;;
     init)
-        __dewi_init
+        if [ -d ../.dewi ]; then
+            dp 'Parent (..) has a `.dewi'\'' directory. Giving up.\n'
+        else
+            __dewi_init
+        fi
         ;;
     update)
+        if [ -d ../.dewi ]; then
+            dp 'Parent (..) has a `.dewi'\'' directory.\n'
+            dp 'Assuming you wanted to run `update'\'' there.\n'
+            cd .. || exit 1
+        fi
         __dewi_update
         ;;
     '')
