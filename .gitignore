@@ -13,3 +13,4 @@ doc/*.5
 doc/*.7
 dewi
 local.stamp
+bin/dewi.pl
