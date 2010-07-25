@@ -6,6 +6,10 @@ Dependencies.
     Dewi requires Perl5, a posix sh and a make implementation (GNU and
     BSD should both work).
 
+    It also requires the IPC::Run3 module from CPAN. This is required to
+    allow external filters to be run. On debian systems, installing the
+    `libipc-run2-perl' package will do the trick.
+
     For building the documentation, the txt2tags[1] package is required.
 
     [1] <http://txt2tags.sourceforge.net/>

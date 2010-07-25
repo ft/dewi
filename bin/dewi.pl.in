@@ -169,6 +169,25 @@ sub __register_defaults {
         debug("register(): Setting default `globarg': (empty string)\n");
     }
 
+    if ($h->{method} eq 'filtered') {
+        if (!defined $h->{filtertype}) {
+            $h->{filtertype} = 'perl';
+        }
+        if (!defined $h->{filter}) {
+            die "register(): `filter' undefined with `filtered' method.\n".
+                "                        Call number $reg_calls.\n";
+        }
+        if ($h->{filtertype} eq 'perl' && !defined &{ $h->{filter} }) {
+            die "register(): perl filter: Unknown coderef.\n".
+                "                        Call number $reg_calls.\n";
+        }
+        if ($h->{filtertype} eq 'shell-file' && !-e $h->{filter}) {
+            die "register(): shell-file filter: File does not exist `" .
+                $h->{filter} . "'.\n".
+                "                        Call number $reg_calls.\n";
+        }
+    }
+
     return 1;
 }
 
@@ -197,6 +216,8 @@ sub __register {
         $new->{mergedname} =
         main::merge_name($h->{destination}, $new->{transformed});
         $new->{method} = $h->{method};
+        $new->{filter} = $h->{filter};
+        $new->{filtertype} = $h->{filtertype};
 
         debug(
             "register(): \""      . $new->{path}        . "\"\n" .
@@ -292,6 +313,7 @@ use English '-no_match_vars';
 use Cwd;
 use File::Copy;
 use File::Spec;
+use IPC::Run3;
 
 our $NAME = 'dewi';
 our $MAJOR_VERSION = 0;
@@ -304,6 +326,7 @@ our (@regfiles);
 
 my %methods = (
     copy       => \&method_copy,
+    filtered   => \&method_filtered,
     force_copy => \&method_force_copy,
     hardlink   => \&method_hardlink,
     symlink    => \&method_symlink
@@ -330,9 +353,10 @@ sub debug {
 
 # option handling
 sub defaults {
-    set_opt('debug',   'no');
-    set_opt('dryrun',  'no');
-    set_opt('verbose', 'no');
+    set_opt('filter_always', 'no');
+    set_opt('debug',         'no');
+    set_opt('dryrun',        'no');
+    set_opt('verbose',       'no');
 }
 
 sub get_opt {
@@ -546,7 +570,7 @@ sub merge_name {
 }
 
 sub method_copy {
-    my ($src, $dst) = @_;
+    my ($src, $dst, $dummy0, $dummy1) = @_;
     my ($dstat, $sstat);
 
     $sstat = xstat($src);
@@ -564,8 +588,79 @@ sub method_copy {
     xcopy($src, $dst);
 }
 
+sub __filter_perl {
+    my ($filter, $src, $dst) = @_;
+    my ($in, $out);
+
+    return 1 if (get_opt_bool('dryrun'));
+    open $in, "<", $src or die "Could not open `$src': $!\n";
+    open $out, ">", $dst or die "Could not open `$dst': $!\n";
+
+    while (my $line = <$in>) {
+        chomp $line;
+        $line = $filter->($line);
+        print {$out} "$line\n";
+    }
+
+    close $out;
+    close $in;
+}
+
+sub __filter_shell_file {
+    my ($filter, $src, $dst) = @_;
+    my ($cmd);
+
+    return 1 if (get_opt_bool('dryrun'));
+    $cmd = [ '@@POSIX_SH@@', "$filter" ];
+    run3 $cmd, $src, $dst, undef;
+}
+
+sub __filter_shell_inline {
+    my ($filter, $src, $dst) = @_;
+    my ($cmd);
+
+    return 1 if (get_opt_bool('dryrun'));
+    $cmd = [ '@@POSIX_SH@@', '-c', "$filter" ];
+    run3 $cmd, $src, $dst, undef;
+}
+
+sub __filter {
+    my ($filter, $type, $src, $dst) = @_;
+
+    if ($type eq 'perl') {
+        __filter_perl($filter, $src, $dst)
+    } elsif ($type eq 'shell-file') {
+        __filter_shell_file($filter, $src, $dst)
+    } elsif ($type eq 'shell-inline') {
+        __filter_shell_inline($filter, $src, $dst)
+    } else {
+        die "__filter(): Unknown filter type `$type'\n";
+    }
+}
+
+sub method_filtered {
+    my ($src, $dst, $filter, $type) = @_;
+    my ($dstat, $sstat);
+
+    $sstat = xstat($src);
+    $dstat = xstat($dst);
+    if (($dstat->{exist} == 1) && ($sstat->{ino} == $dstat->{ino})) {
+        die "  _filtered(): $src and $dst are the same file. Please resolve!\n";
+    }
+    if ((!get_opt_bool('filter_always'))
+            && ($dstat->{exist} == 1) && ($sstat->{mtime} <= $dstat->{mtime}))
+    {
+        verbose("  _filtered(): $dst (not newer than source, skipping)\n");
+        debug("       source: $src\n");
+        return 1;
+    }
+    verbose("  _filtered(): $dst\n");
+    debug("       source: $src\n");
+    __filter($filter, $type, $src, $dst);
+}
+
 sub method_force_copy {
-    my ($src, $dst) = @_;
+    my ($src, $dst, $dummy0, $dummy1) = @_;
     my ($dstat, $sstat);
 
     $sstat = xstat($src);
@@ -580,7 +675,7 @@ sub method_force_copy {
 }
 
 sub method_hardlink {
-    my ($src, $dst) = @_;
+    my ($src, $dst, $dummy0, $dummy1) = @_;
     my ($dstat, $sstat);
 
     $sstat = xstat($src);
@@ -596,7 +691,7 @@ sub method_hardlink {
 }
 
 sub method_symlink {
-    my ($src, $dst) = @_;
+    my ($src, $dst, $dummy0, $dummy1) = @_;
     my ($not_a_symlink);
 
     if (-l $dst) {
@@ -635,7 +730,9 @@ sub deploy_files {
         }
         $methods{$f->{method}}->(
             $f->{path},
-            $f->{mergedname})
+            $f->{mergedname},
+            $f->{filter},
+            $f->{filtertype});
     }
 }
 
