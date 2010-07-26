@@ -124,7 +124,7 @@ sub __register_defaults {
     my ($h) = @_;
 
     if (!defined $h->{glob}) {
-        die "Cannot call register() without `glob' argument.\n"
+        die "Cannot call register() without `glob' argument.\n";
     }
     if (ref($h->{glob}) eq 'CODE' && !defined &{ $h->{glob} }) {
         die
