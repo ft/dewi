@@ -1,0 +1,6 @@
+#!/usr/bin/perl
+
+# Each "make deploy" and "make withdraw" from all subdirectories will
+# load this file *before* the directory's `Dewifile'.
+
+end();

@@ -59,6 +59,14 @@ __copy_bin() {
 
 __copy_config() {
     cp "${datadir}/lib/config.mk" . || return 1
+    cp "${datadir}/lib/config.perl" . || return 1
+}
+
+__copy_config_perl_compat() {
+    if [ ! -e config.perl ]; then
+        cp "${datadir}/lib/config.perl" . || return 1
+    fi
+    return 0
 }
 
 __copy_lib() {
@@ -113,6 +121,7 @@ __dewi_update() {
     __cd_dot_dewi &&
     __copy_lib &&
     __copy_bin &&
+    __copy_config_perl_compat &&
     __cd_parent &&
     __copy_mk_parent &&
     __copy_mk_sub
