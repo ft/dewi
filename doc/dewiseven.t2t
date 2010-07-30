@@ -145,6 +145,11 @@ Here is a list of supported methods:
 Check whether the destination file is older than the source and if so,
 copy the source file to its destination.
 
+: **filtered**
+If this method is used, the files selected in this register run are
+subject to **filtering**. See //FILTERING INPUT FILES// in below for
+details.
+
 : **force_copy**
 Like `//copy//', but does not check for age. It always copies all source
 files.
@@ -157,6 +162,56 @@ configuration files (like git with using `rebase').
 
 : **symlink**
 Instead of copying, create symbolic links.
+
+
+= FILTERING INPUT FILES =
+When deployed files need to carry information, which the input files don't
+(such as passwords in your mail-retrieval configuration), you need to be
+able to change contents on the fly. In //dewi// this is called **filtering**.
+
+To apply filtering, you need set the `//method//' parameter of the register
+function to **filtered** and supply a `//filter//' parameter, which will
+further specify how the filtering will be done.
+
+Filtering is only done if the destination file is younger than the source
+file unless the `//filter_always//' option is set.
+
+Filtering can be done in different ways, and specifying the `//filtertype//'
+parameter of the register function will let you choose which:
+
+: **perl**
+With filtertype, the `//filter//' parameter must be a coderef that takes
+exactly one scalar argument and returns a scalar. The argument will be the
+currently processed line of the input file and the return value should be
+that line with all your filters applied.
+\
+This is the **default** filtertype.
+
+: **shell-file**
+This type let's you define a filename as the `//filter//' parameter and
+that file will be called as a shell script with the input file as **stdin**
+and the deployed file's name as **stdout**.
+
+: **shell-inline**
+This is similar to the **shell-file** type, in the sense that the input
+and output files are connected to **stdin** and **stdout** respectively.
+But here, instead of a filename, the `//filter//' parameter may be any
+chunk of shell code; **including** a single command. So if you feel like
+filtering in **Python** or **Ruby**, you can do just that.
+
+
+If you are using **perl** filter subroutines, you can obviously just
+bail out of the current dewi run by just exiting. If you want to do that
+with the other filtertypes, you can do that by sending a signal to the
+parent process:
+
+: **SIGHUP**
+When //dewi// receives this, it exists and returns a successful value
+(i.e. `**make**' will not be stopped).
+
+: **SIGINT**
+When this signal is received, it exists and returns failure. This will also
+stop running `**make**' targets, like `//deploy//'.
 
 
 = EXAMPLE =
@@ -280,6 +335,7 @@ With that you can now do this:
     register({ glob        => 'zshrc.d/*.z',
                destination => '~/.zshrc.d', });
 ```
+
 
 For more details and documentation of the full `//Dewifile//' API, see
 the dewifile(5) manual page.

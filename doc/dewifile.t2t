@@ -143,6 +143,20 @@ Possible keys are:
 Where to put the files registered in this call. Defaults to the user's
 home directory.
 
+: **filter**
+If `//method//' is set to **filtered**, this specifies the filter, that
+will be applied while deploying.
+\
+This can be either a string (in case the `//filtertype//' parameter is set
+to either "**shell-file**" or "**shell-inline**") or a coderef (in case
+`//filtertype//' is "**perl**").
+\
+See //FILTERING INPUT FILES// in //dewi(7)// for details.
+
+: **filtertype**
+This defines the type of filter that is being used if `//method//' is set
+to **filtered**. See //FILTERING INPUT FILES// in //dewi(7)// for details.
+
 : **glob**
 This may either be a string or a coderef. If it is a string, it is used as
 a globbing pattern to match certain files. If it is a coderef, the function
@@ -198,13 +212,22 @@ register call will result in the file `//zshrc//' being **copied** to
 : **debug**
 Be very noisy during execution. This provides details during the execution
 of the `//Dewifile//' as well as during the file deployment/withdrawal.
+This defaults to `//false//'.
 
 : **dryrun**
 Run, but do not actually do anything. This is useful for writing Dewifiles
 in connection with either the `//verbose//' or the `//debug//' option.
+This defaults to `//false//'.
+
+: **filter_always**
+If set to `//true//', this will cause files that were registered using the
+`**filtered**' method to **always** be remade no matter of their age. This
+may be useful, when you are changing filter scripts and need to test a lot.
+This defaults to `//false//'.
 
 : **verbose**
 Emit status messages during the file deployment/withdrawal.
+This defaults to `//false//'.
 
 
 = SEE ALSO =
