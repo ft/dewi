@@ -777,6 +777,17 @@ sub withdraw_files {
     }
 }
 
+# signals
+$SIG{INT} = sub {
+    print "Got SIGINT. Exiting failing, as requested.\n";
+    exit 1;
+};
+
+$SIG{HUP} = sub {
+    print "Got SIGHUP. Exiting succeeding, as requested.\n";
+    exit 0;
+};
+
 # the main() routine
 sub main {
     if ($#ARGV < 0) {
