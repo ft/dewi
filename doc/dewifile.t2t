@@ -242,6 +242,39 @@ Emit status messages during the file deployment/withdrawal.
 This defaults to `//false//'.
 
 
+= THE DEWI HASH =
+Dewi sets up a hash that carries information which may be interesting when
+writing filters and the like. The information provided by this hash is this:
+
+: **BASE_DIR**
+The name of the central directory. When `//~/etc/zsh//' is the packages
+directory, this will be `//~/etc//'.
+
+: **DOT_DEWI**
+The path of the `.dewi' directory. This is `//BASE_DIR///.dewi'.
+
+: **MAJOR_VERSION**
+The major version of the running dewi program.
+
+: **MINOR_VERSION**
+The minor version of the running dewi program.
+
+: **NAME**
+The name of the program. This should better be `//dewi//'.
+
+: **PACKAGE**
+The name of the current package. When `//~/etc/zsh//' is the packages
+directory, this will be `//zsh//'.
+
+: **SUFFIX_VERSION**
+The suffix version of the running dewi program. This is usually a `//+git//'
+string when this dewi is not a released version.
+
+: **VERSION**
+This is just a concatenation of //MAJOR_VERSION//, //MINOR_VERSION// and
+//SUFFIX_VERSION// with a dot in between of the first two parts.
+
+
 = SEE ALSO =
 dewi(7), dewi(1)
 
