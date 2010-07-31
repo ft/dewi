@@ -1,0 +1,90 @@
+#!/usr/bin/perl
+
+# This is a fairly simple, yet configurable filter example to be used
+# with `dewi'. It is a Perl-based filter. There are several ways to make
+# this code known to the system. One would be, to paste the content of
+# this file into the `.dewi/config.perl' file.
+#
+# The filter functions name is `ex_simple_filter', so to use it you do
+# roughly this:
+#
+#    register( { glob   => 'muttrc',
+#                filter => \&ex_simple_filter } );
+#
+# Then, the basic operation is as follows:
+# At the beginning of Dewifile you call the `ex_simple_filter_init()'
+# function. That subroutine tries to read ~/.sensdata/foo, where `foo'
+# is the last part of the current directory. So, if you are in
+# `~/etc/mutt' it would look for `~/.sensdata/mutt'.
+#
+# The file should contain lines that look like this:
+#
+#   TAG:replacement
+#
+# Where `TAG' can be anything except for a colon or a linebreak. Then
+# when the filter encounters TAG in a line of the input file, it
+# replaces it by `replacement'. Also, lines of which the first non-
+# whitespace character is a `#' will be considered comments. They,
+# like empty lines, will be ignored.
+#
+# So, a line like: "@@POP3_PASSWD@@:mypassword" would replace any
+# occurance of `@@POP3_PASSWD@@' by "mypassword".
+#
+# If you set the user-option `ex-simple-filter-required' option to
+# `true', the `ex_simple_filter_init()' call will exit with a
+# successful return value if the required filter configuration file
+# could not be found.
+#
+# Finally, here is a full example:
+#
+# ~/.sensdata/mutt
+#   [snip]
+# @@POP3_PASSWD@@:mypassword
+#   [snap]
+#
+# ~/etc/mutt/Dewifile
+#   [snip]
+# user_set('ex-simple-filter-required', 'true');
+# ex_simple_filter_init();
+# register( { glob        => 'muttrc',
+#             filter      => \&ex_simple_filter,
+#             destination => '~/.mutt' } );
+# end();
+#   [snap]
+
+my (%ex_simple_filter);
+
+sub ex_simple_filter_init {
+    my ($in, $file);
+    my ($tag, $repl);
+
+    $file = $ENV{HOME} . "/.sensdata/" . $DEWI{PACKAGE};
+    if (user_get_bool('ex-simple-filter-required')) {
+        exit 0 if (! -e $file);
+    }
+
+    open $in, '<', $file or die "Could not open file ($file): $!\n";
+    while (my $line = <$in>) {
+        chomp $line;
+        continue if ($line =~ m/^\s*#/ || $line =~ m/^\s*$/);
+
+        if (($tag, $repl) = $line =~ m/^([^:]+):(.*)$/) {
+            $ex_simple_filter{$tag} = $repl;
+        } else {
+            die "Unknown line in filter file: \"$line\"\n";
+        }
+    }
+    close $in;
+}
+
+sub ex_simple_filter {
+    foreach my $tag (sort keys %ex_simple_filter) {
+        my $repl = $ex_simple_filter{$tag};
+        if ($line =~ s/$tag/$repl/g) {
+            return $line;
+        }
+    }
+    return $line;
+}
+
+user_set('ex-simple-filter-required', 'false');
