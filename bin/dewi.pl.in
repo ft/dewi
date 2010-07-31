@@ -15,6 +15,23 @@ use File::Basename;
 
 my $reg_calls = 0;
 
+# user definable settings
+my (%user_settings);
+sub user_set {
+    my ($key, $val) = @_;
+    $user_settings{$key} = $val;
+}
+
+sub user_get {
+    my ($key) = @_;
+    return $user_settings{$key};
+}
+
+sub user_get_bool {
+    my ($key) = @_;
+    return main::__get_opt_bool(\&user_get, $key);
+}
+
 # output
 sub verbose {
     main::verbose(@_);
@@ -363,11 +380,11 @@ sub get_opt {
     return $opts{$key};
 }
 
-sub get_opt_bool {
-    my ($key) = @_;
+sub __get_opt_bool {
+    my ($go, $key) = @_;
     my ($v);
 
-    $v = get_opt($key);
+    $v = $go->($key);
     return 0 if (!defined $v || $v eq 'no' || $v eq 'no_thanks' || $v eq 'off'
         || $v eq 'false' || $v eq '0');
     return 1 if ($v eq 'yes' || $v eq 'yes_please' || $v eq 'on'
@@ -375,6 +392,11 @@ sub get_opt_bool {
 
     warn "Unknown value for boolean option \"$key\" ($v). Assuming false.\n";
     return 0;
+}
+
+sub get_opt_bool {
+    my ($key) = @_;
+    return __get_opt_bool(\&get_opt, $key);
 }
 
 sub set_opt {
