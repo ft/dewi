@@ -63,6 +63,11 @@ are interpreted as //false//; **yes**, **yes_please**, **on**, **true**
 and **1** are interpreted as //true//. Other values are interpreted as
 //false//, too, but will trigger a warning).
 
+: **read_dewifile(** //PERL_SOURCE_FILE// **)**
+With this, you can read files in addition to //Dewifile// and
+//config.perl//. This may be useful if you want to include code like
+example filters without pasting the whole code to either file.
+
 : **register(** //HASHREF// | //STRING_SCALAR// **)**
 This is the major file registration function. See `THE REGISTER FUNCTION'
 below for details.

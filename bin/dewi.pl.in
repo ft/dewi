@@ -277,7 +277,7 @@ sub register {
 }
 
 # Dewifile reader
-sub __read_dewifile {
+sub read_dewifile {
     my ($file) = @_;
     my ($d, $rc);
 
@@ -852,8 +852,8 @@ sub main {
 
     if ($mode eq 'deploy' || $mode eq 'withdraw') {
         set_dewi_hash();
-        DewiFile::__read_dewifile('../.dewi/config.perl') or return 1;
-        DewiFile::__read_dewifile('Dewifile') or return 1;
+        DewiFile::read_dewifile('../.dewi/config.perl') or return 1;
+        DewiFile::read_dewifile('Dewifile') or return 1;
     }
 
     if (get_opt_bool('dryrun')) {
