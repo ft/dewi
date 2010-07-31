@@ -14,6 +14,7 @@ use File::Spec;
 use File::Basename;
 
 my $reg_calls = 0;
+our (%DEWI);
 
 # user definable settings
 my (%user_settings);
@@ -280,12 +281,6 @@ sub __read_dewifile {
     my ($file) = @_;
     my ($d, $rc);
 
-    our $NAME = $main::NAME;
-    our $MAJOR_VERSION = $main::MAJOR_VERSION;
-    our $MINOR_VERSION = $main::MINOR_VERSION;
-    our $SUFFIX_VERSION = $main::SUFFIX_VERSION;
-    our $VERSION = $main::VERSION;
-
     $rc = do $file;
     if (!defined $rc && $EVAL_ERROR) {
         warn qq{Could not parse $file:\n  - Reason: $@\n};
@@ -327,6 +322,7 @@ use strict;
 use warnings qw(all);
 use English '-no_match_vars';
 use Cwd;
+use File::Basename;
 use File::Copy;
 use File::Spec;
 use IPC::Run3;
@@ -402,6 +398,39 @@ sub get_opt_bool {
 sub set_opt {
     my ($key, $val) = @_;
     $opts{$key} = $val;
+}
+
+# setup the DEWI hash
+sub set_dewi_hash {
+    %DewiFile::DEWI = (
+        NAME           => $NAME,
+        MAJOR_VERSION  => $MAJOR_VERSION,
+        MINOR_VERSION  => $MINOR_VERSION,
+        SUFFIX_VERSION => $SUFFIX_VERSION,
+        VERSION        => $VERSION,
+        BASE_DIR       => base_dir(),
+        DOT_DEWI       => dot_dewi(),
+        PACKAGE        => dewi_package()
+    );
+}
+
+sub base_dir {
+    return Cwd::abs_path(basename(Cwd::getcwd() . "/.."))
+}
+
+sub dot_dewi {
+    my $base = base_dir();
+    my $dd = "$base/.dewi";
+
+    if (! -d $dd) {
+        die "No .dewi in '$base'. Giving up.\n";
+    }
+
+    return $dd;
+}
+
+sub dewi_package {
+    return basename(Cwd::abs_path(Cwd::getcwd()));
 }
 
 # help the user
@@ -822,6 +851,7 @@ sub main {
     defaults();
 
     if ($mode eq 'deploy' || $mode eq 'withdraw') {
+        set_dewi_hash();
         DewiFile::__read_dewifile('../.dewi/config.perl') or return 1;
         DewiFile::__read_dewifile('Dewifile') or return 1;
     }
