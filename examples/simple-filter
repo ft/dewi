@@ -66,7 +66,7 @@ sub ex_simple_filter_init {
     open $in, '<', $file or die "Could not open file ($file): $!\n";
     while (my $line = <$in>) {
         chomp $line;
-        continue if ($line =~ m/^\s*#/ || $line =~ m/^\s*$/);
+        next if ($line =~ m/^\s*#/ || $line =~ m/^\s*$/);
 
         if (($tag, $repl) = $line =~ m/^([^:]+):(.*)$/) {
             $ex_simple_filter{$tag} = $repl;
@@ -78,6 +78,7 @@ sub ex_simple_filter_init {
 }
 
 sub ex_simple_filter {
+    my ($line) = @_;
     foreach my $tag (sort keys %ex_simple_filter) {
         my $repl = $ex_simple_filter{$tag};
         $line =~ s/$tag/$repl/g;
@@ -86,3 +87,4 @@ sub ex_simple_filter {
 }
 
 user_set('ex-simple-filter-required', 'false');
+end();
