@@ -80,9 +80,7 @@ sub ex_simple_filter_init {
 sub ex_simple_filter {
     foreach my $tag (sort keys %ex_simple_filter) {
         my $repl = $ex_simple_filter{$tag};
-        if ($line =~ s/$tag/$repl/g) {
-            return $line;
-        }
+        $line =~ s/$tag/$repl/g;
     }
     return $line;
 }
