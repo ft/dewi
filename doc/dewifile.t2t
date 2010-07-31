@@ -70,6 +70,18 @@ below for details.
 : **set_opt(** //OPTION_NAME//, //OPTION_VALUE// **)**
 Set the option described by //OPTION_NAME// to the value //OPTION_VALUE//.
 
+: **user_get(** //VARIABLE_NAME// **)**
+Returns the value of the variable described by //VARIABLE_NAME// in the
+user-variables namespace.
+
+: **user_get_bool(** //VARIABLE_NAME// **)**
+Like `//get_opt_bool()//', but for the user-variables namespace.
+
+: **user_set(** //VARIABLE_NAME//, //VARIABLE_VALUE// **)**
+Set the variable described by //VARIABLE_NAME// to the value
+//VARIABLE_VALUE// in the user-variables namespace.
+
+
 : **verbose(** //PRINT_LIKE_ARGUMENTS// **)**
 Like Perl's **print** subroutine, but only produces output if the
 `//verbose//' option is set.
