@@ -70,6 +70,7 @@ __create_dirs() {
     [ ! -d "${mandir}/man5" ] && __mkdir "${mandir}/man5"
     [ ! -d "${mandir}/man7" ] && __mkdir "${mandir}/man7"
     [ ! -d "${docdir}" ] && __mkdir "${docdir}"
+    [ ! -d "${docdir}/examples" ] && __mkdir "${docdir}/examples"
     [ ! -d "${datadir}" ] && __mkdir "${datadir}"
     [ ! -d "${datadir}/bin" ] && __mkdir "${datadir}/bin"
     [ ! -d "${datadir}/lib" ] && __mkdir "${datadir}/lib"
@@ -110,6 +111,12 @@ __install_doc() {
     __copy "LICENCE" "${docdir}/LICENCE"
 }
 
+__install_examples() {
+    for i in "simple-filter"; do
+        __copy "examples/$i" "${docdir}/examples/$i"
+    done
+}
+
 case "$1" in
     all-but-doc)
         __remove_old
@@ -122,6 +129,7 @@ case "$1" in
         __create_dirs
         __install_man
         __install_doc
+        __install_examples
         ;;
     uninstall)
         __remove_old
