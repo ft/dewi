@@ -325,7 +325,6 @@ use Cwd;
 use File::Basename;
 use File::Copy;
 use File::Spec;
-use IPC::Run3;
 
 our $NAME = 'dewi';
 our $MAJOR_VERSION = 0;
@@ -657,21 +656,13 @@ sub __filter_perl {
 }
 
 sub __filter_shell_file {
-    my ($filter, $src, $dst) = @_;
-    my ($cmd);
-
-    return 1 if (get_opt_bool('dryrun'));
-    $cmd = [ '@@POSIX_SH@@', "$filter" ];
-    run3 $cmd, $src, $dst, undef;
+    print "This dewi has no IPC::Run3 support. `shell-file' filters won't work.\n";
+    return 1;
 }
 
 sub __filter_shell_inline {
-    my ($filter, $src, $dst) = @_;
-    my ($cmd);
-
-    return 1 if (get_opt_bool('dryrun'));
-    $cmd = [ '@@POSIX_SH@@', '-c', "$filter" ];
-    run3 $cmd, $src, $dst, undef;
+    print "This dewi has no IPC::Run3 support. `shell-file' filters won't work.\n";
+    return 1;
 }
 
 sub __filter {
