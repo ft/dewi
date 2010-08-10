@@ -57,6 +57,10 @@ die_not_found() {
     # does not return
 }
 
+got_perl_module() {
+    perl -e 'eval {require '"$1"';}; if ($@) { exit 1; } else { exit 0;}'
+}
+
 make=$(find_binary "$make_unres")
 die_not_found "$?" make "$make_unres"
 posix_sh=$(find_binary "$posix_sh_unres")
@@ -74,11 +78,27 @@ case "$data_unres" in
         ;;
 esac
 
+if got_perl_module "IPC::Run3"; then
+    ipcrun3='gotit'
+else
+    printf '
+This system does not appear to have the IPC::Run3 Perl module installed.
+`dewi'\'' uses that module to implement external filter functionality.
+If you want that functionality, please make sure it gets installed and
+rerun `generate.sh'\'' again.  If not, you'\''re good to go.\n\n'
+    ipcrun3='sorry, buddy.'
+fi
+
 printf '%s\n' "Configuration:"
-printf '  make:     %s\n' "$make"
-printf '  perl:     %s\n' "$perl"
-printf '  posix_sh: %s\n' "$posix_sh"
-printf '  datadir:  %s\n' "$datadir"
+printf '  make:      %s\n' "$make"
+printf '  perl:      %s\n' "$perl"
+printf '  posix_sh:  %s\n' "$posix_sh"
+printf '  datadir:   %s\n' "$datadir"
+if [ "$ipcrun3" = 'gotit' ]; then
+    printf '  IPC::Run3: found\n'
+else
+    printf '  IPC::Run3: not found\n'
+fi
 printf '\n'
 
 __generate() {
@@ -87,6 +107,7 @@ __generate() {
         s!\@\@BIN_MAKE\@\@!'"$make"'!;
         s!\@\@PERL5\@\@!'"$perl"'!;
         s!\@\@POSIX_SH\@\@!'"$posix_sh"'!;
+        s!\@\@DEWI_GOT_IPCRUN3\@\@!'"$ipcrun3"'!;
     '
 }
 
