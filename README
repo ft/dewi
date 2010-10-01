@@ -71,6 +71,14 @@ Installation.
         % make doc
         % make install-doc
 
+
+      IV. Last words
+
+    There is also a zsh completion for the maintenance helper `dewi' in
+    `_dewi'. Put it somewhere in $fpath before calling `compinit' in your
+    zshrc. See zsh's manual for details.
+
+
 Usage.
 
     See the included dewi(7), dewi(1) and dewifile(5) manuals.

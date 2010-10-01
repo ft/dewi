@@ -1,0 +1,48 @@
+#compdef dewi
+
+function __dewi-nothing-else() {
+    _message "no further arguments"
+}
+
+function _dewi-add() {
+    _path_files -g '*(/-)'
+}
+
+function _dewi-init() {
+    __dewi-nothing-else
+}
+
+function _dewi-update() {
+    __dewi-nothing-else
+}
+
+function _dewi() {
+    local curcontext="${curcontext}"
+    local state ret
+    local -a args commands
+    local -x dewicommand
+
+    commands=(
+        "add:add dewi files to given director{y,ies}"
+        "init:make the current directory a dewi base directory"
+        "update:update dewi installation in the current dewi tree"
+    )
+    args=(
+        #'-v[request verbose output]'
+        #...no options as of now.
+        '*:: :->subcommand_or_options'
+    )
+    _arguments -C -s -w ${args} && return
+
+    if [[ ${state} == "subcommand_or_options" ]]; then
+        if (( CURRENT == 1 )) ; then
+            _describe -t subcommands 'dewi commands' commands
+        else
+            dewicommand="${words[1]}"
+            curcontext="${curcontext%:*:*}:dewi-${dewicommand}:"
+            _call_function ret _dewi-${dewicommand}
+        fi
+    fi
+}
+
+_dewi
