@@ -83,9 +83,7 @@ if got_perl_module "IPC::Run3"; then
 else
     printf '
 This system does not appear to have the IPC::Run3 Perl module installed.
-`dewi'\'' uses that module to implement external filter functionality.
-If you want that functionality, please make sure it gets installed and
-rerun `generate.sh'\'' again.  If not, you'\''re good to go.\n\n'
+`dewi'\'' uses that module to implement external filter functionality.\n\n'
     ipcrun3='sorry, buddy.'
 fi
 
@@ -107,7 +105,6 @@ __generate() {
         s!\@\@BIN_MAKE\@\@!'"$make"'!;
         s!\@\@PERL5\@\@!'"$perl"'!;
         s!\@\@POSIX_SH\@\@!'"$posix_sh"'!;
-        s!\@\@DEWI_GOT_IPCRUN3\@\@!'"$ipcrun3"'!;
     '
 }
 

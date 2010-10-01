@@ -8,9 +8,7 @@ Dependencies.
 
     It also requires the IPC::Run3 module from CPAN. This is required to
     allow external filters to be run. On debian systems, installing the
-    `libipc-run2-perl' package will do the trick. If this module is not
-    available when `generate.sh' is called, the support for external
-    filters will be turned off.
+    `libipc-run3-perl' package will do the trick.
 
     For building the documentation, the txt2tags[1] package is required.
 

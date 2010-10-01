@@ -325,7 +325,17 @@ use Cwd;
 use File::Basename;
 use File::Copy;
 use File::Spec;
-use IPC::Run3;
+
+my %optional_features = (
+    external_filters => "tobeseen"
+);
+
+eval {require IPC::Run3;};
+if ($@) {
+    $optional_features{external_filters} = 'missing';
+} else {
+    $optional_features{external_filters} = 'gotit';
+}
 
 our $NAME = 'dewi';
 our $MAJOR_VERSION = 0;
@@ -353,14 +363,10 @@ sub method_exists {
     return 0;
 }
 
-my %optional_features = (
-    external_filters => "@@DEWI_GOT_IPCRUN3@@"
-);
-
 sub dewi_got_feature {
     my ($f) = @_;
 
-    if (defined $optional_features{$f} && $optional_features{$f} == 'gotit') {
+    if (defined $optional_features{$f} && $optional_features{$f} eq 'gotit') {
         return 1;
     }
     return 0;
@@ -674,28 +680,28 @@ sub __filter_shell_file {
     my ($filter, $src, $dst) = @_;
     my ($cmd);
 
-    if (dewi_got_feature('external_filters')) {
+    if (!dewi_got_feature('external_filters')) {
         print "Cannot run `shell-file' filter as required.\n";
         print "This dewi has no support for external filters. Giving up.\n";
         return 1;
     }
     return 1 if (get_opt_bool('dryrun'));
     $cmd = [ '@@POSIX_SH@@', "$filter" ];
-    run3 $cmd, $src, $dst, undef;
+    IPC::Run3::run3($cmd, $src, $dst, undef);
 }
 
 sub __filter_shell_inline {
     my ($filter, $src, $dst) = @_;
     my ($cmd);
 
-    if (dewi_got_feature('external_filters')) {
+    if (!dewi_got_feature('external_filters')) {
         print "Cannot run `shell-inline' filter as required.\n";
         print "This dewi has no support for external filters. Giving up.\n";
         return 1;
     }
     return 1 if (get_opt_bool('dryrun'));
     $cmd = [ '@@POSIX_SH@@', '-c', "$filter" ];
-    run3 $cmd, $src, $dst, undef;
+    IPC::Run3::run3($cmd, $src, $dst, undef);
 }
 
 sub __filter {
