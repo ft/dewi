@@ -649,7 +649,7 @@ sub method_copy {
         die "  _copy(): $src and $dst are the same file. Please resolve!\n";
     }
     if (($dstat->{exist} == 1) && ($sstat->{mtime} <= $dstat->{mtime})) {
-        verbose("  _copy(): $dst (not newer than source, skipping)\n");
+        verbose("  _copy(): $dst (source is not newer, skipping)\n");
         debug("   source: $src\n");
         return 1;
     }
@@ -730,7 +730,7 @@ sub method_filtered {
     if ((!get_opt_bool('filter_always'))
             && ($dstat->{exist} == 1) && ($sstat->{mtime} <= $dstat->{mtime}))
     {
-        verbose("  _filtered(): $dst (not newer than source, skipping)\n");
+        verbose("  _filtered(): $dst (source is not newer, skipping)\n");
         debug("       source: $src\n");
         return 1;
     }
