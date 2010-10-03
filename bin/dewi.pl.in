@@ -63,7 +63,6 @@ sub get_opt_bool {
 }
 
 # helpers
-
 sub __expand_dir {
     my ($str) = @_;
 
@@ -72,8 +71,46 @@ sub __expand_dir {
     return $str;
 }
 
-# request empty directories
+# hooks
+sub add_hook {
+    my ($h) = @_;
+    my ($ev);
 
+    goto ERROR if (ref($h) ne 'HASH');
+    $h->{type} = 'perl' if (!defined $h->{type});
+    goto ERROR if (!defined $h->{code} || !defined $h->{event});
+    if ($h->{type} ne 'perl' && $h->{type} ne 'shell-inline'
+            && $h->{type} ne 'shell-file')
+    {
+        print "The type parameter needs to be one of these:\n";
+        print "  - perl\n";
+        print "  - shell-file\n";
+        print "  - shell-inline\n";
+        print "\n";
+        goto ERROR;
+    }
+    if ($h->{type} eq 'perl' && ref($h->{code}) ne 'CODE') {
+        print "add_hook(): When `type' is \"perl\","
+            . " `code' needs to be a coderef.\n\n";
+        goto ERROR;
+    }
+    if ($h->{type} eq 'shell-file' && !-f ref($h->{code})) {
+        print "add_hook(): When `type' is \"shell-file\","
+            . " `code' needs to be an existing file.\n\n";
+        goto ERROR;
+    }
+    $ev = $h->{event};
+    delete($h->{event});
+    main::register_hook($ev, $h);
+    return 1;
+
+ERROR:
+    print "usage: add_hook(<hash-ref>);\n";
+    print "See dewifile(5) for details.\n";
+    exit 1;
+}
+
+# request empty directories
 sub deploy_directory {
     if ($#_ != 0) {
         die "usage: deploy_directory('directory_name');\n";
@@ -344,7 +381,7 @@ our $SUFFIX_VERSION = '+git';
 our $VERSION = $MAJOR_VERSION . '.' . $MINOR_VERSION . $SUFFIX_VERSION;
 
 my (%opts);
-our (@regfiles);
+our (%hooks, @regfiles);
 
 my %methods = (
     copy       => \&method_copy,
@@ -802,6 +839,7 @@ sub method_symlink {
 sub deploy_files {
     my ($base) = @_;
 
+    run_hook('pre-deploy', \$base);
     print "Deploying $base...\n";
     foreach my $f (@regfiles) {
         ensure_dir($f->{destination});
@@ -814,12 +852,14 @@ sub deploy_files {
             $f->{filter},
             $f->{filtertype});
     }
+    run_hook('post-deploy', \$base);
 }
 
 sub withdraw_files {
     my ($base) = @_;
     my (%dests);
 
+    run_hook('pre-withdraw', \$base);
     print "Withdrawing $base...\n";
     foreach my $f (@regfiles) {
         if (!defined $dests{$f->{destination}}) {
@@ -856,6 +896,72 @@ sub withdraw_files {
             verbose("  withdraw: `$d' is not empty. Leaving it alone.\n");
         }
     }
+    run_hook('post-withdraw', \$base);
+}
+
+# hooks
+sub register_hook {
+    my ($event, $hr) = @_;
+
+    push @{ $hooks{$event} }, $hr;
+    return 1;
+}
+
+sub run_shell_hook_file {
+    my ($ev, $file, @args) = @_;
+    my (@cmd);
+
+    push @cmd, '@@POSIX_SH@@';
+    foreach my $scal (@args) {
+        push @cmd, $$scal;
+    }
+    $ENV{DEWI_HOOK_EVENT} = $ev;
+    system(@cmd);
+    delete($ENV{DEWI_HOOK_EVENT});
+}
+
+sub run_shell_hook_inline {
+    my ($ev, $code, @args) = @_;
+    my (@env_args, $i);
+
+    $ENV{DEWI_HOOK_EVENT} = $ev;
+    $i = 0;
+    foreach my $scal (@args) {
+        push @env_args, "DEWI_HOOK_ARG$i";
+        $ENV{"DEWI_HOOK_ARG$i"} = $$scal;
+        $i++;
+    }
+    system(('@@POSIX_SH@@', '-c', $code));
+    delete($ENV{DEWI_HOOK_EVENT});
+    foreach my $key (@env_args) {
+        delete($ENV{$key});
+    }
+}
+
+sub run_hook {
+    # The @args should be a set of scalar references. They *must* be references,
+    # in fact, because `run_shell_hook_file()' dereferences them before passing
+    # the scalars as arguments to the script file. `run_shell_hook_inline()'
+    # behaves similarly.
+    my ($event, @args) = @_;
+
+    if (!defined $hooks{$event} || scalar @{ $hooks{$event} } == 0) {
+        return 0;
+    }
+
+    foreach my $h (@{ $hooks{$event} }) {
+        if ($h->{type} eq 'perl') {
+            $h->{code}->($event, @args);
+        } elsif ($h->{type} eq 'shell-file') {
+            run_shell_hook_file($event, $h->{code}, @args);
+        } elsif ($h->{type} eq 'shell-inline') {
+            run_shell_hook_inline($event, $h->{code}, @args);
+        } else {
+            die "BUG: Unknown hook type: " . $h->{type} . ". Giving up.\n";
+        }
+    }
+
+    return 1
 }
 
 # signals

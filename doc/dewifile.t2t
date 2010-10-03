@@ -31,6 +31,9 @@ and their behaviour may change.
 
 
 == Main API ==
+: **add_hook(** //HASHREF// **)**
+Add a hook to an event. For details, see `HOOKS' in //dewi(7)//.
+
 : **debug(** //PRINT_LIKE_ARGUMENTS// **)**
 Like Perl's **print** subroutine, but only produces output if the
 `//debug//' option is set.
@@ -249,7 +252,7 @@ This defaults to `//false//'.
 
 = THE DEWI HASH =
 Dewi sets up a hash that carries information which may be interesting when
-writing filters and the like. The information provided by this hash is this:
+writing filters and Perl hooks. The information provided by this hash is this:
 
 : **BASE_DIR**
 The name of the central directory. When `//~/etc/zsh//' is the packages

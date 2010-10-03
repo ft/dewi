@@ -214,6 +214,94 @@ When this signal is received, it exists and returns failure. This will also
 stop running `**make**' targets, like `//deploy//'.
 
 
+= HOOKS =
+There are a number of places during the execution of //dewi// where
+custom code may be hooked into the system. There are different types of
+code that are supported. Hook code is registered with the system by
+using the //add_hook()// function.
+
+The only argument to the function needs to be a hashref, which supports
+the following parameters: //type//: The type of code (may be **perl**,
+**shell-file** or **shell-inline** - similar to filters); //event//: The
+event at which the code is executed; //code//: The actual code (depends
+on the hook type).
+
+A hook usually gets additional information as some form of parameter.
+The actual kind depends on the hook type. See below.
+
+A very simple example looks like this:
+\
+```
+    add_hook( { type  => 'shell-inline',
+                event => 'pre-deploy',
+                code  =>
+        'echo "name: $DEWI_HOOK_EVENT, 1st arg: $DEWI_HOOK_ARG0"' ) };
+```
+
+
+== Hook-type: perl ==
+
+In this type, a Perl function is run for the given event. So, the //code//
+parameter to //add_hook()// needs to be a coderef.
+
+The function is called with a number of arguments. The first argument is
+**always** the name of the event which caused the function to be run. The
+rest of the argument list depends on the specific event. One thing **every**
+event has in common is that these argument are references to scalar variables.
+
+
+== Hook-type: shell-file ==
+
+This type runs a file are a POSIX shell script.
+
+The event name is stored in the //$DEWI_HOOK_EVENT// environment variable.
+The event-specific arguments are passed as positional parameters to the
+script.
+
+
+== Hook-type: shell-inline ==
+
+This type runs the //code// parameter **as** shell code.
+
+The event name is stored in the //$DEWI_HOOK_EVENT// environment variable.
+The event-specific arguments are passed as environment variables, too. These
+variable names got the following format: //$DEWI_HOOK_ARG//**<N>** - where
+**N** is an integer, which starts at zero.
+
+This type makes it possible to write dewi hooks in every language the user
+wants. For a python hook, the //code// parameter looks roughly like this:
+\
+```
+    "python ~/my-py-hook.py"
+```
+
+== Events ==
+
+=== pre-deploy ===
+
+Run right before deployment is done.
+
+Parameters: **0**: The package's name.
+
+=== pre-withdraw ===
+
+Run right before a withdraw is done.
+
+Parameters: **0**: The package's name.
+
+=== post-deploy ===
+
+Run right after deployment is done.
+
+Parameters: **0**: The package's name.
+
+=== post-withdraw ===
+
+Run right after a withdraw is done.
+
+Parameters: **0**: The package's name.
+
+
 = EXAMPLE =
 Let's assume, the configuration file directory is `//~/etc//' and we want
 to deploy our zsh configuration which is located in the `//zsh//'
