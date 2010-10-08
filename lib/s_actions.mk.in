@@ -7,3 +7,7 @@ DOT_DEWI_DIR = ../.dewi
 CHILD_HELP = @@PERL5@@ $(DOT_DEWI_DIR)/bin/dewi.pl child_help
 DEPLOY_SUBDIR = @@PERL5@@ $(DOT_DEWI_DIR)/bin/dewi.pl deploy
 WITHDRAW_SUBDIR = @@PERL5@@ $(DOT_DEWI_DIR)/bin/dewi.pl withdraw
+ARCHIVES = @@PERL5@@ $(DOT_DEWI_DIR)/bin/dewi.pl archives
+ARCHIVE_TAR = @@PERL5@@ $(DOT_DEWI_DIR)/bin/dewi.pl archive-tar
+ARCHIVE_TAR_GZ = @@PERL5@@ $(DOT_DEWI_DIR)/bin/dewi.pl archive-tar-gz
+ARCHIVE_TAR_BZ2 = @@PERL5@@ $(DOT_DEWI_DIR)/bin/dewi.pl archive-tar-bz2

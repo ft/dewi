@@ -8,4 +8,5 @@ DOT_DEWI_DIR = .dewi
 PARENT_HELP = @@PERL5@@ $(DOT_DEWI_DIR)/bin/dewi.pl parent_help
 DEPLOY_ALL_SUBDIRS = @@POSIX_SH@@ $(DOT_DEWI_DIR)/bin/inall.sh deploy
 WITHDRAW_ALL_SUBDIRS = @@POSIX_SH@@ $(DOT_DEWI_DIR)/bin/inall.sh withdraw
+ARCHIVE_ALL_SUBDIRS = @@POSIX_SH@@ $(DOT_DEWI_DIR)/bin/inall.sh archive
 DEWIFY = @@POSIX_SH@@ $(DOT_DEWI_DIR)/bin/bootstrap.sh

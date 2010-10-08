@@ -1,0 +1,14 @@
+#!@@POSIX_SH@@
+# Copyright (c) 2010
+# Frank Terbeck <ft@bewatermyfriend.org>, All rights reserved.
+# Terms for redistribution and use can be found in `LICENCE'.
+
+set +x
+dir="$1"
+file="$2"
+parent="${dir%/*}"
+name="${dir##*/}"
+
+cd "$parent" || exit 1
+command tar cf "$file" "$name" || exit 1
+exit 0

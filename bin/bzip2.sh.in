@@ -1,0 +1,11 @@
+#!@@POSIX_SH@@
+# Copyright (c) 2010
+# Frank Terbeck <ft@bewatermyfriend.org>, All rights reserved.
+# Terms for redistribution and use can be found in `LICENCE'.
+
+set +x
+file="$1"
+
+bzip2 -c -9 "$file" > "$file.bz2" || exit 1
+rm "$file" || exit 1
+exit 0
