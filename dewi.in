@@ -132,6 +132,11 @@ __dewi_add() {
     "${posix_sh}" .dewi/bin/bootstrap.sh "$1"
 }
 
+__dewi_foreach() {
+    @@POSIX_SH@@ .dewi/bin/inall.sh -run "$@"
+    return $?
+}
+
 __realpath() {
     (cd "$1" && pwd)
 }
@@ -165,6 +170,10 @@ case "$op" in
                 __dewi_add "${dir}"
             done
         fi
+        ;;
+    foreach)
+        __dewi_foreach "$@"
+        ret=$?
         ;;
     init)
         if [ "${dewiroot}" != '/' ]; then

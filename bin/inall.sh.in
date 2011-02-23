@@ -3,17 +3,29 @@
 # Frank Terbeck <ft@bewatermyfriend.org>, All rights reserved.
 # Terms for redistribution and use can be found in `LICENCE'.
 
+if [ "$1" = '-run' ]; then
+    run=1
+    shift
+else
+    echo "inall.sh: make" "$@"
+    run=0
+fi
+
 d=".dewi/lib"
 . "$d"/shell.sh
 
-echo "inall.sh: make" "$@"
 for dir in *; do
     [ ! -d "$dir" ] && continue
     if __is_dewified "$dir"; then
     (
         cd "$dir" || exit 1
-        printf '  + "%s"\n' "$dir"
-        make "$@" || exit 1
+        if [ "$run" = 0 ]; then
+            printf '  + "%s"\n' "$dir"
+            make "$@" || exit 1
+        else
+            eval "$@"
+        fi
+        true
     ) || exit 1
     fi
 done

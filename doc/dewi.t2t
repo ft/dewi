@@ -31,6 +31,24 @@ Initialise a directory as a central dewi directory.
 This fails if called from a sub-directory of a dewi parent directory
 (ie, one parent directory contains a `//.dewi//' directory.
 
+: **foreach** //<COMMAND>//
+Run a command in every dewified subdirectory.
+\
+The //<COMMAND>// list ist actually passed to the shell's `**eval**'
+builtin, which means you can make use of shell variables, like `**$PWD**':
+\
+```
+  dewi foreach echo '$PWD'\; "echo \"bam  boo\""
+```
+\
+That will run these commands in all subdirectories (Note the weird quoting
+rules. Be careful, when trying tricky stuff!):
+\
+```
+  echo $PWD
+  echo "bam  boo"
+```
+
 : **update**
 Update the dewi system of a previously initialised directory.
 \

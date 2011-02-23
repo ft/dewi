@@ -24,6 +24,7 @@ function _dewi() {
 
     commands=(
         "add:add dewi files to given director{y,ies}"
+        "foreach:run a command in every dewified subdirectory"
         "init:make the current directory a dewi base directory"
         "update:update dewi installation in the current dewi tree"
     )
