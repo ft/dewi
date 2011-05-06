@@ -417,7 +417,7 @@ to be a string scalar which holds the desired glob. Like "*.txt".
 With that you can now do this:
 \
 ```
-    register({ glob        => \&regular_files,
+    register({ glob        => \&regularfiles,
                globarg     => 'z*',
                transform   => \&makedotfile});
     register({ glob        => 'zshrc.d/*.z',
