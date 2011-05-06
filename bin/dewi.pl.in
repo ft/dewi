@@ -195,6 +195,21 @@ sub makedotfile {
     return '.' . $_[0];
 }
 
+# path name helpers
+sub merge_path {
+    if ($#_ != 1) {
+        die "Usage: merge_path(<part_one>, <part_two>);\n";
+    }
+    main::merge_name(@_);
+}
+
+sub expand_path {
+    if ($#_ != 0) {
+        die "Usage: merge_path(<directory>);\n";
+    }
+    main::expand_dir(@_);
+}
+
 # The `register()' subroutine
 sub __register_defaults {
     # This sets default values for the different meaningful keys and

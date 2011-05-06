@@ -56,6 +56,9 @@ This function does nothing, but it returns a true value. You can use it
 at the very end of a `//Dewifile//' so that Perl can source it without
 errors and warnings.
 
+: **expand_path(** //PATH// **)**
+Perform tilde-expansion on **PATH**.
+
 : **get_opt(** //OPTION_NAME// **)**
 Returns the value of the option described by //OPTION_NAME//.
 
@@ -65,6 +68,9 @@ as a boolean value (**no**, **no_thanks**, **off**, **false** and **0**
 are interpreted as //false//; **yes**, **yes_please**, **on**, **true**
 and **1** are interpreted as //true//. Other values are interpreted as
 //false//, too, but will trigger a warning).
+
+: **merge_path(** //PART_A//, //PART_B// **)**
+Portably join **PART_A** and **PART_B** into a combined path name.
 
 : **read_dewifile(** //PERL_SOURCE_FILE// **)**
 With this, you can read files in addition to //Dewifile// and
