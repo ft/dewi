@@ -9,6 +9,7 @@ package DewiFile;
 use strict;
 use warnings qw(all);
 use English '-no_match_vars';
+use File::Find;
 use File::Glob qw{ bsd_glob };
 use File::Spec;
 use File::Basename;
@@ -152,6 +153,28 @@ sub regularfiles {
     my ($glob) = @_;
 
     return grep { -f } bsd_glob($glob);
+}
+
+sub recursivefiles {
+    my ($data) = @_;
+    my (@files, $regex);
+
+    if (ref($data) ne 'HASH') {
+        my $save = $data;
+        $data = {};
+        $data->{basedir} = $save;
+    }
+    $data->{basedir} = '.' if (!defined $data->{basedir});
+    $data->{regex} = '.' if (!defined $data->{regex});
+
+    $regex = qr{$data->{regex}};
+    my $findcb = sub {
+        return if !-f;
+        return if (!m/$regex/);
+        push @files, $File::Find::name;
+    };
+    find($findcb, $data->{basedir});
+    return @files;
 }
 
 # predefined `post-glob' code

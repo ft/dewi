@@ -109,6 +109,40 @@ the globbing function's first and only argument.
 : **regularfiles(** //GLOB_STRING// **)**
 Matches only regular files, that match //GLOB_STRING//.
 
+: **recursivefiles(** (//HASH_REF//|//BASE_DIR_STRING//) **)**
+Like `//regularfiles()//' but works recursively. The argument has to be a
+hashref or a string. The hashref argument is the generic one. Two keys are
+used: `//basedir//' and `//regex//'. `//basedir//' is the directory in which
+file name generation should start. `//regex//' is a regular expression, each
+generated file is matched against. Only if the regular expression matches
+the file name, the file is used. **Note*: This is a **difference** between
+this function and `//regularfiles()//', because `//regularfiles()//' uses
+a shell globbing pattern *NOT* a Perl regular expression.
+\
+The default value for `//basedir//' is `//.//'. Meaning that the file
+generation starts in the current directory.
+\
+For `//regex//' the default value is `//.//', which means that every file
+generated will be matched.
+\
+If instead of a hashref, a string is given, it will be used as the value
+for `//basedir//'. `//regex//' gets its default value.
+\
+Example:
+\
+```
+    register({ glob        => \&recursivefiles,
+               globarg     => { basedir => 'snippets',
+                                regex   => '\.yasnippet$' },
+               method      => 'copy',
+               destination => \&recursive_dirname,
+               destarg     => '~/.emacs.d'
+               }});
+```
+\
+See //"Predefined Destination Code"// above for details on
+`//recursive_dirname()//' and `//destarg//'.
+
 
 == Predefined Post-Glob Code ==
 The functions described in this sub-section are supposed to be used as
