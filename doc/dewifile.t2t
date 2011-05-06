@@ -101,6 +101,46 @@ Like Perl's **print** subroutine, but only produces output if the
 `//verbose//' option is set.
 
 
+== Predefined Destination Code ==
+It is possible to pass a coderef as a value for the `register()//' function's
+`**destination**' parameter. The `**destarg' parameter is passed as this
+function's first argument. The second argument provided to this function is
+a hashref containing information about each file in question. The following
+keys are available:
+
+: **path**
+The entire source file name.
+
+: **srcdir**
+The directory part of the source file name.
+
+: **name**
+The file part of the source file name.
+
+: **transformed**
+The proposed file name part of the destination file. This is basically the
+value of `//name//', but after all configured file name transformation code
+has been run on it.
+
+The destination coderef needs to return a **string** value, which will be
+used as the destination directory for the currently processed file.
+
+
+The following subroutines are available as `//destination//' callbacks in
+Dewifiles per default:
+
+: **recursive_dirname**
+Constructs a multi-level destination directory from a given source file
+name. This is useful to automatically register whole subtrees for
+deployment in conjunction with `//recursivefiles()//' as a `**glob**'
+callback (See //"Predefined Globbing Code"// below for details and an
+example.)
+\
+This subroutine uses `//destarg//' as a root directory in which to put
+the multi-level subtree (by concatenating the `**srcdir**' part from
+its hashref argument to it).
+
+
 == Predefined Globbing Code ==
 These functions are to be used as coderef values to the `//register()//'
 function's `**glob**' argument. The `**globarg**' parameter is passed to
@@ -201,7 +241,9 @@ Possible keys are:
 
 : **destination**
 Where to put the files registered in this call. Defaults to the user's
-home directory.
+home directory. If this parameter is a coderef, that code is executed to
+construct a suitable destination directory for the file in question. See
+//"Predefined Destination Code "// above for details on how that works.
 
 : **filter**
 If `//method//' is set to **filtered**, this specifies the filter, that

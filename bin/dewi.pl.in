@@ -218,6 +218,12 @@ sub makedotfile {
     return '.' . $_[0];
 }
 
+# predefined `destination' code
+sub recursive_dirname {
+    my ($prefix, $data) = @_;
+    return expand_path(merge_path($prefix, $data->{srcdir}));
+}
+
 # path name helpers
 sub merge_path {
     if ($#_ != 1) {
@@ -320,7 +326,9 @@ sub __register {
         @files = $h->{post_glob}->(@files);
     }
 
-    $h->{destination} = main::expand_dir($h->{destination});
+    if (ref($h->{destination}) ne 'CODE') {
+        $h->{destination} = main::expand_dir($h->{destination});
+    }
     foreach my $path (@files) {
         my $new = {};
         my ($volume,$directories,$file) = File::Spec->splitpath( $path );
@@ -330,12 +338,19 @@ sub __register {
         $new->{srcdir} = $directories;
         $new->{name} = $file;
         $new->{transformed} = $h->{transform}->($file);
-        $new->{destination} = $h->{destination};
-        $new->{mergedname} =
-        main::merge_name($h->{destination}, $new->{transformed});
+
+        if (ref($h->{destination}) eq 'CODE') {
+            my %copy = %{ $new };
+            $new->{destination} = $h->{destination}->( $h->{destarg}, \%copy );
+        } else {
+            $new->{destination} = $h->{destination};
+        }
+
         $new->{method} = $h->{method};
         $new->{filter} = $h->{filter};
         $new->{filtertype} = $h->{filtertype};
+        $new->{mergedname} =
+            main::merge_name($new->{destination}, $new->{transformed});
 
         debug(
             "register(): \""      . $new->{path}        . "\"\n" .
