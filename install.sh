@@ -118,7 +118,7 @@ __install_examples() {
 }
 
 umask 022
-case "$0" in
+case "$1" in
     all-but-doc)
         __remove_old
         __create_dirs
