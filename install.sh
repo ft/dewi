@@ -37,7 +37,7 @@ done
 
 __mkdir() {
     printf 'mkdir "%s"\n' "$1"
-    mkdir "$1" || exit 1
+    mkdir -p "$1" || exit 1
     chmod 755 "$1" || exit 1
 }
 
