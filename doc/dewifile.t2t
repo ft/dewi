@@ -76,11 +76,11 @@ more readable. Consider:
 ...and then this:
 \
 ```
-    register({ glob          => 'foo.conf',
-               destination   => '~/.foo',
-               method        => 'filtered',
-               'filter-type' => 'shell-inline',
-               filter        => 'sed -e "s,@VERSION@,0.2f,"' });
+    register({ glob        => 'foo.conf',
+               destination => '~/.foo',
+               method      => 'filtered',
+               filtertype  => 'shell-inline',
+               filter      => 'sed -e "s,@VERSION@,0.2f,"' });
 ```
 \
 You do not have to remember which argument goes where. The order is
