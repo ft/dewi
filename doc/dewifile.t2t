@@ -20,6 +20,130 @@ of the process. It features a simple, yet powerful API for registering
 files with dewi.
 
 
+== Emergency Perl ==
+
+//Relax//.
+
+You actually do not have to know any Perl to use dewi. You can get by just
+fine by cut-and-pasting snippets from the included example code. Here are
+four concepts that may help you to understand what is actually going on:
+
+: Comments
+They start in a hash-mark and span to the end of the current line, like this:
+\
+```
+    # Hi there, I'm a comment and span to the end of the line.
+```
+
+: Subroutine application
+Calls some code and returns something. Never mind that it returns
+something. It runs some code. and looks like this:
+\
+```
+    thesubroutine("first argument", 'second', 3);
+```
+\
+As a bonus, you now know what scalar values like strings and numbers look
+like.
+
+: Hashrefs
+
+Actually a reference to a hash (otherwise known as associative arrays or
+key-value storages). It looks like this:
+\
+```
+    { key1 => value1,
+      key2 => value2,
+      key3 => value3,
+      # ...
+      keyN => valueN }
+```
+\
+So, in short they are nicely looking key-value pairs within curly braces.
+For the purpose of Dewifiles can forget about the reference part in
+hashrefs entirely. To you as a user it doesn't make a difference at all.
+The reason dewi uses hashrefs is that it makes complex subroutine calls
+more readable. Consider:
+\
+```
+    register('foo.conf',
+             '~/.foo',
+             'filtered',
+             'shell-inline',
+             'sed -e "s,@VERSION@,0.2f,"');
+```
+\
+...and then this:
+\
+```
+    register({ glob          => 'foo.conf',
+               destination   => '~/.foo',
+               method        => 'filtered',
+               'filter-type' => 'shell-inline',
+               filter        => 'sed -e "s,@VERSION@,0.2f,"' });
+```
+\
+You do not have to remember which argument goes where. The order is
+arbitrary. Putting keys in front of values makes complex calls self
+documenting as well. Also, you do not have to always put in all arguments
+to a subroutine call. You can just leave out the ones for which you will
+not be changing the default value anyway.
+
+: Coderefs
+
+Code references point to stuff that can be executed. Subroutines. Dewi uses
+coderefs to let you inject code in many places to solve complex problems.
+To create a coderef to a subroutine called `//mysubroutine//' you do this:
+\
+```
+    \&mysubroutine
+```
+\
+
+Simple enough. You can also define anonymous subroutines whereever you like
+and they will return a coderef to said anonymous subroutine. That would
+look like this:
+\
+```
+    sub { THE CODE OF THE ANONYMOUS SUBROUTINE GOES HERE. }
+```
+\
+
+To further visualize this, consider these examples:
+\
+```
+    # Create a named subroutine, that prefixes an
+    # input string with a dot.
+    sub my_make_dot_file {
+       my ($originalfilename) = @_;
+       return "." . $originalfilename;
+    }
+    register({ glob      => 'gitconfig',
+               transform => \&my_make_dot_file });
+    
+    # The same can be done using an anonymous subroutine.
+    register({ glob      => 'gitconfig',
+               transform => sub { return "." . $_[0] } });
+```
+\
+Note, that dewi ships a subroutine for this particular problem (see the
+`//makedotfile()//' documentation below).
+\
+The reason coderefs are used instead of options like "make-this-a-dotfile"
+is to give the user freedom to do whatever they need to do to accomplish a
+given task. If you need to have a file name be transformed into something
+more exotic, you can just do that without having to ask for new features.
+
+
+This should be enough as an introduction. I could go into more detail. Like
+"What is @_?" (it's the list of arguments passed to a subroutine) or "What
+is $_[0]?" (it accesses the first element from `@_')... But this was meant
+to briefly introduce the concepts used in Dewifiles so you can **use**
+dewi. If you would like to extend it in non-trivial ways, I suggest you
+pick up a little Perl first ("Learning Perl", "Programming Perl" and "Perl
+Best Practices" come to mind).
+
+
 = API =
 The API is quite simple. Mostly, you will be using the `//register()//'
 and `//set_opt()//' functions. The latter for setting options, such as
