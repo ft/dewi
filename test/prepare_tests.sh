@@ -10,7 +10,11 @@ export HOME
 
 cd etc || exit 1
 
-"$dewi" init || exit 1
+if test -d .dewi; then
+    "$dewi" update || exit 1
+else
+    "$dewi" init || exit 1
+fi
 
 cp ../config.perl .dewi/config.perl || exit 1
 
