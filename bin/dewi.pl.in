@@ -342,6 +342,10 @@ sub __register {
     } elsif (ref($h->{glob}) eq 'ARRAY') {
         foreach my $entry (@{ $h->{glob} }) {
             my @f = bsd_glob($entry);
+            if (defined $h->{post_glob_single}
+                && ref $h->{post_glob_single} eq 'CODE') {
+                @f = $h->{post_glob_single}->(@f);
+            }
             push @files, @f;
         }
     } else {
