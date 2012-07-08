@@ -1,0 +1,67 @@
+Test code for `dewi'
+--------------------
+
+I. USAGE
+
+Unless you know what you're doing follow this procedure.
+
+First clean out the project directory (did I mention, you should only be
+running the test suite from a git clone of the project?).
+
+  % git clean -xdf
+
+To run the test code first do a non-sys script generation in the root directory
+of the project:
+
+  % make
+
+Then change to the test directory:
+
+  % cd test
+
+Prepare the test directory structure:
+
+  % sh prepare_tests.sh
+
+Finally run the tests:
+
+  % sh tests.sh
+
+
+II. HOW IT WORKS
+
+Each test is kept in a directory in test/etc/, like test/etc/emacs. The $HOME
+environment variable is changed to test/home/.
+
+`prepare_tests.sh' initialises test/etc as the dewi root directory and "dewi
+add"s all subdirectories. Then it copies test/Dewifile.<subdir> to
+test/etc/<subdir>.
+
+`tests.sh' calls `run_test.sh' for each subdirectory.
+
+`run_test.sh' does the following:
+
+  - make deploy
+  - Run verify.deploy.sh if it exists.
+  - make withdraw
+  - Run verify.withdraw.sh if it exists.
+
+The verify.* scripts should test significant aspects about the deployment and
+withdrawal processes.
+
+
+III. IN CASE SOMETHING GOES WRONG
+
+Things should never break. If they do, report it.
+
+If something breaks like this:
+
+  [...]
+  Deploying emacs...
+  [...]
+  run_test.sh: Verifying deployment...
+
+Include the following in your report:
+
+  % cd etc/emacs              (or whereever the failure occured)
+  % sh -x verify.deploy.sh    (or verify.withdraw.sh if withdrawal failed)

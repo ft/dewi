@@ -17,3 +17,8 @@ bin/dewi.pl
 bin/bzip2.sh
 bin/gzip.sh
 bin/tar.sh
+test/etc/*/Makefile
+test/etc/*/Dewifile
+test/home/
+test/etc/.dewi/
+test/etc/Makefile
