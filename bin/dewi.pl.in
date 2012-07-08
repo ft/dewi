@@ -308,6 +308,18 @@ sub __register_defaults {
                 $h->{filter} . "'.\n".
                 "                        Call number $reg_calls.\n";
         }
+        # No need to check for `defined'. `__is_bool_true()' is false for
+        # undefined values.
+        if (main::__is_bool_true($h->{concatenate})) {
+            $h->{concatenate} = 1;
+        } else {
+            $h->{concatenate} = 0;
+        }
+    } elsif (main::__is_bool_true($h->{concatenate})) {
+        die "register(): `concatenate' only allowed with method `filtered'.\n"
+          . "            Call number $reg_calls.\n";
+    } else {
+        $h->{concatenate} = 0;
     }
 
     return 1;
@@ -349,6 +361,7 @@ sub __register {
         $new->{method} = $h->{method};
         $new->{filter} = $h->{filter};
         $new->{filtertype} = $h->{filtertype};
+        $new->{concatenate} = $h->{concatenate};
         $new->{mergedname} =
             main::merge_name($new->{destination}, $new->{transformed});
 
@@ -359,7 +372,8 @@ sub __register {
             "         Source: \"" . $new->{srcdir}      . "\"\n" .
             "    Destination: \"" . $new->{destination} . "\"\n" .
             "    Merged-Name: \"" . $new->{mergedname}  . "\"\n" .
-            "         Method: "   . $new->{method}      . "\n");
+            "         Method: "   . $new->{method}      . "\n" .
+            "    Concatenate: "   . $new->{concatenate} . "\n");
 
         push @main::regfiles, $new;
     }
