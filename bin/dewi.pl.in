@@ -339,6 +339,11 @@ sub __register {
 
     if (ref($h->{glob}) eq 'CODE') {
         @files = $h->{glob}->($h->{globarg});
+    } elsif (ref($h->{glob}) eq 'ARRAY') {
+        foreach my $entry (@{ $h->{glob} }) {
+            my @f = bsd_glob($entry);
+            push @files, @f;
+        }
     } else {
         @files = bsd_glob($h->{glob});
     }
