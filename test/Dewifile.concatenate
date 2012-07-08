@@ -1,4 +1,5 @@
-register({ glob        => qw{ alice bar barney baz bob foo fred },
+set_opt('debug', 'yes');
+register({ glob        => [ qw{ alice bar barney baz bob foo fred } ],
            method      => 'filtered',
            concatenate => 'yes_please',
            destination => '~/.concatenate/config' });
