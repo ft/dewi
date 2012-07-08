@@ -316,14 +316,7 @@ sub __register_defaults {
                 $h->{filter} . "'.\n".
                 "                        Call number $reg_calls.\n";
         }
-        # No need to check for `defined'. `__is_bool_true()' is false for
-        # undefined values.
-        if (main::__is_bool_true($h->{concatenate})) {
-            $h->{concatenate} = 1;
-        } else {
-            $h->{concatenate} = 0;
-        }
-    } elsif (main::__is_bool_true($h->{concatenate})) {
+    } elsif (defined $h->{concatenate}) {
         die "register(): `concatenate' only allowed with method `filtered'.\n"
           . "            Call number $reg_calls.\n";
     } else {
@@ -366,7 +359,12 @@ sub __register {
         $directories =~ s/\/+$//;
         $new->{srcdir} = $directories;
         $new->{name} = $file;
-        $new->{transformed} = $h->{transform}->($file);
+        if (defined $h->{concatenate}) {
+            $new->{concatenate} = $h->{transform}->($h->{concatenate});
+            $new->{transformed} = $file;
+        } else {
+            $new->{transformed} = $h->{transform}->($file);
+        }
 
         if (ref($h->{destination}) eq 'CODE') {
             my %copy = %{ $new };
@@ -378,19 +376,21 @@ sub __register {
         $new->{method} = $h->{method};
         $new->{filter} = $h->{filter};
         $new->{filtertype} = $h->{filtertype};
-        $new->{concatenate} = $h->{concatenate};
         $new->{mergedname} =
             main::merge_name($new->{destination}, $new->{transformed});
 
         debug(
             "register(): \""      . $new->{path}        . "\"\n" .
-            "           Name: \"" . $new->{name}        . "\"\n" .
+            "           Name: \"" . $new->{name}        . "\"\n");
+        debug(
+            "    Concatenate: \"" . $new->{concatenate} . "\"\n")
+                 if (defined $new->{concatenate});
+        debug(
             "    Transformed: \"" . $new->{transformed} . "\"\n" .
             "         Source: \"" . $new->{srcdir}      . "\"\n" .
             "    Destination: \"" . $new->{destination} . "\"\n" .
             "    Merged-Name: \"" . $new->{mergedname}  . "\"\n" .
-            "         Method: "   . $new->{method}      . "\n" .
-            "    Concatenate: "   . $new->{concatenate} . "\n");
+            "         Method: "   . $new->{method}      . "\n");
 
         push @main::regfiles, $new;
     }
