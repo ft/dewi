@@ -224,6 +224,12 @@ sub recursive_dirname {
     return expand_path(merge_path($prefix, $data->{srcdir}));
 }
 
+# predefined `filter' code
+sub print_filter {
+    my ($line) = @_;
+    return $line;
+}
+
 # path name helpers
 sub merge_path {
     if ($#_ != 1) {
@@ -293,11 +299,13 @@ sub __register_defaults {
 
     if ($h->{method} eq 'filtered') {
         if (!defined $h->{filtertype}) {
+            debug("register(): Setting default `filtertype': perl\n");
             $h->{filtertype} = 'perl';
         }
         if (!defined $h->{filter}) {
-            die "register(): `filter' undefined with `filtered' method.\n".
-                "                        Call number $reg_calls.\n";
+            $h->{filtertype} = 'perl';
+            debug("register(): Setting default `filter': \&print_filter\n");
+            $h->{filter} = \&print_filter;
         }
         if ($h->{filtertype} eq 'perl' && !defined &{ $h->{filter} }) {
             die "register(): perl filter: Unknown coderef.\n".
