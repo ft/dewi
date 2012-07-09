@@ -319,8 +319,6 @@ sub __register_defaults {
     } elsif (defined $h->{concatenate}) {
         die "register(): `concatenate' only allowed with method `filtered'.\n"
           . "            Call number $reg_calls.\n";
-    } else {
-        $h->{concatenate} = 0;
     }
 
     return 1;
