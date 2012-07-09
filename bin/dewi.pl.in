@@ -833,7 +833,8 @@ sub merge_name {
 }
 
 sub method_copy {
-    my ($src, $dst, $dummy0, $dummy1) = @_;
+    my ($f) = @_;
+    my ($src, $dst) = ($f->{path}, $f->{mergedname});
     my ($dstat, $sstat);
 
     $sstat = xstat($src);
@@ -852,7 +853,11 @@ sub method_copy {
 }
 
 sub __filter_perl {
-    my ($filter, $src, $dst) = @_;
+    my ($f) = @_;
+    my ($filter, $src, $dst, $cat) = ($f->{filter},
+                                      $f->{path},
+                                      $f->{mergedname},
+                                      $f->{concatenate});
     my ($in, $out);
 
     return 1 if (get_opt_bool('dryrun'));
@@ -870,7 +875,11 @@ sub __filter_perl {
 }
 
 sub __filter_shell_file {
-    my ($filter, $src, $dst) = @_;
+    my ($f) = @_;
+    my ($filter, $src, $dst, $cat) = ($f->{filter},
+                                      $f->{path},
+                                      $f->{mergedname},
+                                      $f->{concatenate});
     my ($cmd);
 
     if (!dewi_got_feature('external_filters')) {
@@ -884,7 +893,11 @@ sub __filter_shell_file {
 }
 
 sub __filter_shell_inline {
-    my ($filter, $src, $dst) = @_;
+    my ($f) = @_;
+    my ($filter, $src, $dst, $cat) = ($f->{filter},
+                                      $f->{path},
+                                      $f->{mergedname},
+                                      $f->{concatenate});
     my ($cmd);
 
     if (!dewi_got_feature('external_filters')) {
@@ -898,21 +911,23 @@ sub __filter_shell_inline {
 }
 
 sub __filter {
-    my ($filter, $type, $src, $dst) = @_;
+    my ($f) = @_;
+    my ($type) = ($f->{filtertype});
 
     if ($type eq 'perl') {
-        __filter_perl($filter, $src, $dst)
+        __filter_perl($f)
     } elsif ($type eq 'shell-file') {
-        __filter_shell_file($filter, $src, $dst)
+        __filter_shell_file($f)
     } elsif ($type eq 'shell-inline') {
-        __filter_shell_inline($filter, $src, $dst)
+        __filter_shell_inline($f)
     } else {
         die "__filter(): Unknown filter type `$type'\n";
     }
 }
 
 sub method_filtered {
-    my ($src, $dst, $filter, $type) = @_;
+    my ($f) = @_;
+    my ($src, $dst) = ($f->{path}, $f->{mergedname});
     my ($dstat, $sstat);
 
     $sstat = xstat($src);
@@ -929,11 +944,12 @@ sub method_filtered {
     }
     verbose("  _filtered(): $dst\n");
     debug("       source: $src\n");
-    __filter($filter, $type, $src, $dst);
+    __filter($f);
 }
 
 sub method_force_copy {
-    my ($src, $dst, $dummy0, $dummy1) = @_;
+    my ($f) = @_;
+    my ($src, $dst) = ($f->{path}, $f->{mergedname});
     my ($dstat, $sstat);
 
     $sstat = xstat($src);
@@ -948,7 +964,8 @@ sub method_force_copy {
 }
 
 sub method_hardlink {
-    my ($src, $dst, $dummy0, $dummy1) = @_;
+    my ($f) = @_;
+    my ($src, $dst) = ($f->{path}, $f->{mergedname});
     my ($dstat, $sstat);
 
     $sstat = xstat($src);
@@ -964,7 +981,8 @@ sub method_hardlink {
 }
 
 sub method_symlink {
-    my ($src, $dst, $dummy0, $dummy1) = @_;
+    my ($f) = @_;
+    my ($src, $dst) = ($f->{path}, $f->{mergedname});
     my ($not_a_symlink);
 
     if (-l $dst) {
@@ -1002,11 +1020,7 @@ sub deploy_files {
         if (defined $f->{deploydir} && $f->{deploydir} eq 'yes') {
             next;
         }
-        $methods{$f->{method}}->(
-            $f->{path},
-            $f->{mergedname},
-            $f->{filter},
-            $f->{filtertype});
+        $methods{$f->{method}}->($f);
     }
     run_hook('post-deploy', \$base);
 }
