@@ -935,7 +935,7 @@ sub method_filtered {
     if (($dstat->{exist} == 1) && ($sstat->{ino} == $dstat->{ino})) {
         die "  _filtered(): $src and $dst are the same file. Please resolve!\n";
     }
-    if ((!get_opt_bool('filter_always'))
+    if ((!get_opt_bool('filter_always') && !defined $f->{needsrefresh})
             && ($dstat->{exist} == 1) && ($sstat->{mtime} <= $dstat->{mtime}))
     {
         verbose("  _filtered(): $dst (source is not newer, skipping)\n");
@@ -1296,6 +1296,35 @@ sub mark_first {
     return 1;
 }
 
+sub concatenate_dependencies {
+    my (%prev, %todo, %stats);
+    my ($key) = ('needsrefresh');
+
+    foreach my $e (@regfiles) {
+        my ($f, $m) = ($e->{path},
+                       $e->{mergedname});
+
+        if (!defined $stats{$m}) {
+            $stats{$m} = xstat($m);
+        }
+
+        if (defined $todo{$m}) {
+            $e->{$key} = 1;
+        } elsif (sub { my $s = xstat($f);
+                       return 1 if (($stats{$m}->{exist} == 0)
+                                        || ($s->{mtime} > $stats{$m}->{mtime}));
+                       return 0}->()) {
+            $todo{$m} = 1;
+            $e->{$key} = 1;
+            foreach my $old (@{ $prev{$m} }) {
+                $old->{$key} = 1;
+            }
+        } else {
+            push @{ $prev{$m} }, $e;
+        }
+    }
+}
+
 sub post_process_req_files {
     # The `concatenate' feature needs to know what the first part of a
     # concatenation is, so it can truncate the destination file beforehand.
@@ -1303,6 +1332,12 @@ sub post_process_req_files {
     # For more features, `concatenate' also needs to know the last part of a
     # concatenation...
     mark_first('concatenate', 'catlast', [ reverse @regfiles ]);
+    # Also with `concatenate', a destination file depends on several source
+    # files. Now we could opt to just regenerate concatenate files every time,
+    # _or_ we just check if at least one of the input files are newer then the
+    # destination. Needs to be done here, because the rest of the code works
+    # file by file.
+    concatenate_dependencies();
 }
 
 # signals
