@@ -359,7 +359,7 @@ sub __register {
         $new->{name} = $file;
         if (defined $h->{concatenate}) {
             $new->{concatenate} = $h->{transform}->($h->{concatenate});
-            $new->{transformed} = $file;
+            $new->{transformed} = $new->{concatenate};
         } else {
             $new->{transformed} = $h->{transform}->($file);
         }
