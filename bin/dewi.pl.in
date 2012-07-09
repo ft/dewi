@@ -858,11 +858,16 @@ sub __filter_perl {
                                       $f->{path},
                                       $f->{mergedname},
                                       $f->{concatenate});
-    my ($in, $out);
+    my ($in, $out, $mode);
 
     return 1 if (get_opt_bool('dryrun'));
+    if (!defined $cat || defined $f->{catfirst}) {
+        $mode = q{>};
+    } else {
+        $mode = q{>>};
+    }
     open $in, "<", $src or die "Could not open `$src': $!\n";
-    open $out, ">", $dst or die "Could not open `$dst': $!\n";
+    open $out, $mode, $dst or die "Could not open `$dst': $!\n";
 
     while (my $line = <$in>) {
         chomp $line;
@@ -880,7 +885,7 @@ sub __filter_shell_file {
                                       $f->{path},
                                       $f->{mergedname},
                                       $f->{concatenate});
-    my ($cmd);
+    my ($cmd, $mode);
 
     if (!dewi_got_feature('external_filters')) {
         print "Cannot run `shell-file' filter as required.\n";
@@ -888,8 +893,14 @@ sub __filter_shell_file {
         return 1;
     }
     return 1 if (get_opt_bool('dryrun'));
+
+    if (!defined $cat || defined $f->{catfirst}) {
+        $mode = 0;
+    } else {
+        $mode = 1;
+    }
     $cmd = [ '@@POSIX_SH@@', "$filter" ];
-    IPC::Run3::run3($cmd, $src, $dst, undef);
+    IPC::Run3::run3($cmd, $src, $dst, undef, { append_stdout => $mode });
 }
 
 sub __filter_shell_inline {
@@ -898,7 +909,7 @@ sub __filter_shell_inline {
                                       $f->{path},
                                       $f->{mergedname},
                                       $f->{concatenate});
-    my ($cmd);
+    my ($cmd, $mode);
 
     if (!dewi_got_feature('external_filters')) {
         print "Cannot run `shell-inline' filter as required.\n";
@@ -906,8 +917,14 @@ sub __filter_shell_inline {
         return 1;
     }
     return 1 if (get_opt_bool('dryrun'));
+
+    if (!defined $cat || defined $f->{catfirst}) {
+        $mode = 0;
+    } else {
+        $mode = 1;
+    }
     $cmd = [ '@@POSIX_SH@@', '-c', "$filter" ];
-    IPC::Run3::run3($cmd, $src, $dst, undef);
+    IPC::Run3::run3($cmd, $src, $dst, undef, { append_stdout => $mode });
 }
 
 sub __filter {
@@ -927,7 +944,7 @@ sub __filter {
 
 sub method_filtered {
     my ($f) = @_;
-    my ($src, $dst) = ($f->{path}, $f->{mergedname});
+    my ($src, $dst, $cat) = ($f->{path}, $f->{mergedname}, $f->{concatenate});
     my ($dstat, $sstat);
 
     $sstat = xstat($src);
@@ -942,7 +959,7 @@ sub method_filtered {
         debug("       source: $src\n");
         return 1;
     }
-    verbose("  _filtered(): $dst\n");
+    verbose("  _filtered(): $dst" . (defined $cat ? " [concat]" : "") . "\n");
     debug("       source: $src\n");
     __filter($f);
 }
