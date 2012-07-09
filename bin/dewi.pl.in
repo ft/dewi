@@ -1055,6 +1055,10 @@ sub withdraw_files {
         if (defined $f->{deploydir} && $f->{deploydir} eq 'yes') {
             next;
         }
+        if (defined $f->{concatenate} && !defined $f->{catfirst}) {
+            next;
+        }
+
         if (!-e $f->{mergedname}) {
             verbose("  withdraw: " . $f->{mergedname}
                 . " does not exist. Ignoring.\n");
