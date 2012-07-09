@@ -1267,6 +1267,30 @@ sub run_hook {
     return 1
 }
 
+# Post processing `@regfiles'
+sub mark_first {
+    my ($needle, $marker, $dat) = @_;
+    my (%keep);
+
+    foreach my $e (@{ $dat }) {
+        if (defined $e->{$needle} && !defined $keep{$e->{$needle}}) {
+            $e->{$marker} = 1;
+            $keep{$e->{$needle}} = 'seen';
+        }
+    }
+
+    return 1;
+}
+
+sub post_process_req_files {
+    # The `concatenate' feature needs to know what the first part of a
+    # concatenation is, so it can truncate the destination file beforehand.
+    mark_first('concatenate', 'catfirst', \@regfiles);
+    # For more features, `concatenate' also needs to know the last part of a
+    # concatenation...
+    mark_first('concatenate', 'catlast', [ reverse @regfiles ]);
+}
+
 # signals
 $SIG{INT} = sub {
     print "Got SIGINT. Exiting failing, as requested.\n";
@@ -1295,6 +1319,7 @@ sub main {
         set_dewi_hash();
         DewiFile::read_dewifile('../.dewi/config.perl') or return 1;
         DewiFile::read_dewifile('Dewifile') or return 1;
+        post_process_req_files();
     }
 
     if (get_opt_bool('dryrun')) {
