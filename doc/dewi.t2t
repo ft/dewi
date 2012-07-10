@@ -1,6 +1,6 @@
 DEWI
 
-Feb, 2011
+Jul, 2012
 
 %!target: man
 
@@ -63,5 +63,5 @@ dewi(7), dewifile(5)
 
 
 = COPYRIGHT =
-Copyright (c) 2010-2011 Frank Terbeck <ft@bewatermyfriend.org>, All rights
+Copyright (c) 2010-2012 Frank Terbeck <ft@bewatermyfriend.org>, All rights
 reserved. Terms for redistribution and use can be found in doc/LICENCE.
