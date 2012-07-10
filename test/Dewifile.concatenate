@@ -1,5 +1,15 @@
+sub header {
+    print "# Add an awesome header\n";
+}
+
+sub footer {
+    print "# And a footer to go with it\n";
+}
+
 register({ glob        => [ qw{ alice bar barney baz bob foo fred } ],
            method      => 'filtered',
            concatenate => 'config',
+           intercat    => { firstpre => \&header,
+                            lastpost => \&footer },
            destination => '~/.concatenate' });
 end();

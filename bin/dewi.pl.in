@@ -374,6 +374,7 @@ sub __register {
         $new->{method} = $h->{method};
         $new->{filter} = $h->{filter};
         $new->{filtertype} = $h->{filtertype};
+        $new->{intercat} = $h->{intercat};
         $new->{mergedname} =
             main::merge_name($new->{destination}, $new->{transformed});
 
@@ -861,7 +862,7 @@ sub __filter_perl {
     my ($in, $out, $mode);
 
     return 1 if (get_opt_bool('dryrun'));
-    if (!defined $cat || defined $f->{catfirst}) {
+    if (!defined $cat) {
         $mode = q{>};
     } else {
         $mode = q{>>};
@@ -894,7 +895,7 @@ sub __filter_shell_file {
     }
     return 1 if (get_opt_bool('dryrun'));
 
-    if (!defined $cat || defined $f->{catfirst}) {
+    if (!defined $cat) {
         $mode = 0;
     } else {
         $mode = 1;
@@ -918,7 +919,7 @@ sub __filter_shell_inline {
     }
     return 1 if (get_opt_bool('dryrun'));
 
-    if (!defined $cat || defined $f->{catfirst}) {
+    if (!defined $cat) {
         $mode = 0;
     } else {
         $mode = 1;
@@ -942,6 +943,24 @@ sub __filter {
     }
 }
 
+sub __run_cat_cb {
+    my ($f, $cb) = @_;
+    my $fun = $f->{intercat}->{$cb};
+
+    local(*STDOUT);
+    open *STDOUT, q{>>}, $f->{mergedname} or die "Couldn't open " . $f->path
+                                               . " for appending.\n";
+
+    if (defined $fun) {
+        if (ref $fun eq 'CODE') {
+            $fun->($f, $cb);
+        } else {
+            warn "concatenate: non-Perl intercat values not supported, yet.\n";
+        }
+    }
+    close *STDOUT;
+}
+
 sub method_filtered {
     my ($f) = @_;
     my ($src, $dst, $cat) = ($f->{path}, $f->{mergedname}, $f->{concatenate});
@@ -959,10 +978,28 @@ sub method_filtered {
         debug("       source: $src\n");
         return 1;
     }
+
+    if (defined $f->{catfirst}) {
+        truncate $dst, 0;
+        __run_cat_cb($f, 'firstpre');
+    } elsif (defined $f->{catlast}) {
+        __run_cat_cb($f, 'lastpre');
+    } elsif (defined $f->{concatenate}) {
+        __run_cat_cb($f, 'otherpre');
+    }
+
     verbose("  _filtered(): $dst" . (defined $cat ? " [concat: $src]" : "")
                                   . "\n");
     debug("       source: $src\n");
     __filter($f);
+
+    if (defined $f->{catfirst}) {
+        __run_cat_cb($f, 'firstpost');
+    } elsif (defined $f->{catlast}) {
+        __run_cat_cb($f, 'lastpost');
+    } elsif (defined $f->{concatenate}) {
+        __run_cat_cb($f, 'otherpost');
+    }
 }
 
 sub method_force_copy {
