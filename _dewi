@@ -18,9 +18,8 @@ function _dewi-update() {
 
 function _dewi() {
     local curcontext="${curcontext}"
-    local state ret
+    local state ret dewicommand
     local -a args commands
-    local -x dewicommand
 
     commands=(
         "add:add dewi files to given director{y,ies}"
