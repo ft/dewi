@@ -19,9 +19,9 @@ function _dewi-update() {
 function _dewi() {
     local curcontext="${curcontext}"
     local state ret dewicommand
-    local -a args commands
+    local -a args cmds
 
-    commands=(
+    cmds=(
         "add:add dewi files to given director{y,ies}"
         "foreach:run a command in every dewified subdirectory"
         "init:make the current directory a dewi base directory"
@@ -36,7 +36,7 @@ function _dewi() {
 
     if [[ ${state} == "subcommand_or_options" ]]; then
         if (( CURRENT == 1 )) ; then
-            _describe -t subcommands 'dewi commands' commands
+            _describe -t subcommands 'dewi commands' cmds
         else
             dewicommand="${words[1]}"
             curcontext="${curcontext%:*:*}:dewi-${dewicommand}:"
