@@ -959,7 +959,8 @@ sub method_filtered {
         debug("       source: $src\n");
         return 1;
     }
-    verbose("  _filtered(): $dst" . (defined $cat ? " [concat]" : "") . "\n");
+    verbose("  _filtered(): $dst" . (defined $cat ? " [concat: $src]" : "")
+                                  . "\n");
     debug("       source: $src\n");
     __filter($f);
 }
