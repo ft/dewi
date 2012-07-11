@@ -967,6 +967,15 @@ sub __run_cat_cb {
     my $sptype = $f->{intercat}->{$cb . 'type'};
     my $type = defined $sptype ? $sptype : $f->{intercat}->{type};
 
+    if (!dewi_got_feature('external_filters')
+        && (defined $type && $type =~ m/^shell-(file|inline)$/))
+    {
+        warn "WARNING: External `intercat' callbacks require the"
+           . " `external_filters'\n  feature provided by IPC::Run3 which is"
+           . " not available here.\n";
+        return 0;
+    }
+
     if (defined $fun) {
         my @args = ($cb,
                     $f->{path},
@@ -1004,6 +1013,7 @@ sub __run_cat_cb {
                             { append_stdout => 1 });
         }
     }
+    return 1;
 }
 
 sub method_filtered {
