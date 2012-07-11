@@ -962,8 +962,18 @@ sub __run_cat_cb {
 
         if (ref $fun eq 'CODE') {
             $fun->(@args);
-        } else {
-            warn "concatenate: non-Perl intercat values not supported, yet.\n";
+        } elsif ($fun eq 'shell-file') {
+            system((@@POSIX_SH@@, q{-c}, $fun, @args));
+        } elsif ($fun eq 'shell-file') {
+            local(%ENV);
+            $ENV{DEWI_CONCAT_CALLBACK} = $args[0];
+            $ENV{DEWI_INFILE} = $args[1];
+            $ENV{DEWI_INFILE_DIR} = $args[2];
+            $ENV{DEWI_INFILE_NAME} = $args[3];
+            $ENV{DEWI_TRANSFORMED} = $args[4];
+            $ENV{DEWI_CONCATENATE} = $args[5];
+            $ENV{DEWI_MERGED} = $args[6];
+            system((@@POSIX_SH@@, q{-c}, $fun));
         }
     }
     close *STDOUT;
