@@ -952,8 +952,16 @@ sub __run_cat_cb {
                                                . " for appending.\n";
 
     if (defined $fun) {
+        my @args = ($cb,
+                    $f->{path},
+                    $f->{srcdir},
+                    $f->{name},
+                    $f->{transformed},
+                    $f->{concatenate},
+                    $f->{mergedname});
+
         if (ref $fun eq 'CODE') {
-            $fun->($f, $cb);
+            $fun->(@args);
         } else {
             warn "concatenate: non-Perl intercat values not supported, yet.\n";
         }
