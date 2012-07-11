@@ -321,6 +321,24 @@ sub __register_defaults {
           . "            Call number $reg_calls.\n";
     }
 
+    if (defined $h->{intercat}) {
+        my $ic = $h->{intercat};
+
+        if (!defined $ic->{type} || $ic->{type} eq 'perl') {
+            foreach my $cb (qw{firstpre firstpost
+                               lastpre lastpost
+                               otherpre otherpost})
+            {
+                if ((!defined $ic->{$cb.'type'} || $ic->{$cb.'type'} eq 'perl')
+                    && defined $ic->{$cb} && !defined &{ $ic->{$cb} }) {
+                    die "register(): concatenate callback `$cb' does not point"
+                        . "                        to a valid Perl subroutine."
+                        . " Call number $reg_calls.\n";
+                }
+            }
+        }
+    }
+
     return 1;
 }
 
