@@ -964,10 +964,8 @@ sub __filter {
 sub __run_cat_cb {
     my ($f, $cb) = @_;
     my $fun = $f->{intercat}->{$cb};
-
-    local(*STDOUT);
-    open *STDOUT, q{>>}, $f->{mergedname} or die "Couldn't open " . $f->path
-                                               . " for appending.\n";
+    my $sptype = $f->{intercat}->{$cb . 'type'};
+    my $type = defined $sptype ? $sptype : $f->{intercat}->{type};
 
     if (defined $fun) {
         my @args = ($cb,
@@ -979,10 +977,18 @@ sub __run_cat_cb {
                     $f->{mergedname});
 
         if (ref $fun eq 'CODE') {
+            local(*STDOUT);
+            open *STDOUT, q{>>}, $f->{mergedname}
+                or die "Couldn't open " . $f->path . " for appending.\n";
             $fun->(@args);
-        } elsif ($fun eq 'shell-file') {
-            system((@@POSIX_SH@@, q{-c}, $fun, @args));
-        } elsif ($fun eq 'shell-file') {
+            close *STDOUT;
+        } elsif ($type eq 'shell-file') {
+            IPC::Run3::run3(['@@POSIX_SH@@', $fun, @args],
+                            undef,
+                            $f->{mergedname},
+                            undef,
+                            { append_stdout => 1 });
+        } elsif ($type eq 'shell-inline') {
             local(%ENV);
             $ENV{DEWI_CONCAT_CALLBACK} = $args[0];
             $ENV{DEWI_INFILE} = $args[1];
@@ -991,10 +997,13 @@ sub __run_cat_cb {
             $ENV{DEWI_TRANSFORMED} = $args[4];
             $ENV{DEWI_CONCATENATE} = $args[5];
             $ENV{DEWI_MERGED} = $args[6];
-            system((@@POSIX_SH@@, q{-c}, $fun));
+            IPC::Run3::run3(['@@POSIX_SH@@', q{-c}, $fun],
+                            undef,
+                            $f->{mergedname},
+                            undef,
+                            { append_stdout => 1 });
         }
     }
-    close *STDOUT;
 }
 
 sub method_filtered {
