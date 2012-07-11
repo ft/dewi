@@ -1408,6 +1408,8 @@ sub concatenate_dependencies {
         my ($f, $m) = ($e->{path},
                        $e->{mergedname});
 
+        # If $m is not defined, it's not for us (`deploydir' maybe).
+        next if (!defined $m);
         if (!defined $stats{$m}) {
             $stats{$m} = xstat($m);
         }
