@@ -394,10 +394,12 @@ This defines the type of filter that is being used if `//method//' is set
 to **filtered**. See //FILTERING INPUT FILES// in //dewi(7)// for details.
 
 : **glob**
-This may either be a string or a coderef. If it is a string, it is used as
-a globbing pattern to match certain files. If it is a coderef, the function
-the reference points to is called with the **globarg** key's value as its
-argument.
+
+This may either be a string, an arrayref or a coderef. If it is a string, it is
+used as a globbing pattern to match certain files. If it is an arrayref, the
+entries work like multiple string arguments to `//glob//'. Finally, if it is a
+coderef, the function the reference points to is called with the **globarg**
+key's value as its argument.
 
 This is the only key that has **no default value**. It must be specified.
 
@@ -410,6 +412,11 @@ This key's value may be a coderef to a subroutine that let's you modify the
 list of files returned by the globbing mechanism. The referenced subroutine
 gets all globbed file names as arguments and must return an array of file
 names. This key has no default value.
+
+: **post_glob_single**
+When `//glob//' is an arrayref, this is like `//post_glob//', but called for
+each and every entry in that list. If `//post_glob//' is specified as well, it
+is still called for the entire file list.
 
 : **transform**
 The filename transformation is handled by the function referenced by this
