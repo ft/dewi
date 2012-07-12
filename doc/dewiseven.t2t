@@ -214,6 +214,112 @@ When this signal is received, it exists and returns failure. This will also
 stop running `**make**' targets, like `//deploy//'.
 
 
+== Concatenated Deployment ==
+
+This is an extension to filtered deployment. The idea is to concatenate
+multiple files to produce a single, bigger deployed file from them. The feature
+is controlled by the `//concatenate//' entry within the hashref argument of the
+`//register()//' subroutine. It is **only** valid if the deployment method is
+`//filtered//'.
+
+When specified, all input files matched with `//glob//' will be ran through the
+filter specified by `//filter//' (or its default value if unspecified) and then
+concatenated into a file within `//destination//' named after the string given
+in `//concatenate//'.
+
+When `//concatenate//' is specified, filename transformation as specified by
+the `//transform//' property is performed in the `//concatenate//' string
+rather than the name of one of the input files.
+
+While files are being concatenated to produce a destination file, multiple
+callbacks are run before and after each and every single input file. Data
+written to `**stdout**' of these callbacks will be written to the destination
+file. This enables you to insert headers, footers and other additional data to
+the generated file in an automated fashion.
+
+These callbacks are defined in the `//intercat//' property of the
+`//register()//' function's hashref. Its value is itself a hashref in which the
+following keys are considered:
+
+: **firstpre**
+Executed //before// the //first// input file is put into the destination file.
+
+: **firstpost**
+Executed //after// the //first// input file.
+
+: **lastpre**
+Executed //before// the //last// input file.
+
+: **lastpost**
+Executed //after// the //last// input file.
+
+: **otherpre**
+Executed //before// the //all other// input files.
+
+: **otherpost**
+Executed //after// the //all other// input files.
+
+: **type**
+Specifies the type of the callbacks defined. Either `//perl//' (the default),
+`//shell-file//' or `//shell-inline//' (like hooks and filters).
+\
+If you need to define the type of a specific callback, you can use properties
+named "**<CALLBACK>type**". For example, to specify the type of the
+`//lastpost//' callback, you may set the `//lastposttype//' property.
+
+
+The callbacks are rather similar to hooks as described below. For example, the
+callback name (i.e. "**firstpre**") is handed as the first argument of a Perl
+callback subroutine (or as `//$DEWI_HOOK_EVENT//' for the external callback
+types). The callback arguments for `//shell-inline//' type callbacks are
+available in //$DEWI_HOOK_ARG//**<N>** environment variables as well.
+
+Concatenation callbacks are different enough to not be called hooks, though.
+Their output from **stdout** is automatically inserted into the destination
+file for example. Also, the callbacks are specific to a given destination file
+and do not globally apply to the deployment process. They are not handled with
+hook API subroutines (such as `//add_hook()//') either.
+
+An example for concatenated deployment is shown below:
+\
+```
+  sub header {
+      print "# Header for ~/.zshrc\n\n";
+  }
+  
+  register({ # Match a bunch of files to put into the destination file.
+             glob        => 'zshrc.d/*',
+             # Weed out some stuff, matched by `glob'.
+             post_glob   => sub {
+                 return remove_hashes( remove_tilde(@_) ) },
+  
+             # The `method' needs to be `filtered' for this.
+             method      => 'filtered',
+  
+             # This is used as the combined destination file name.
+             concatenate => '.zshrc',
+  
+             # Finally inter-concatenation callbacks.
+             intercat    => {
+                 # The default type is `perl' so the coderef is valid.
+                 firstpre => \&header,
+                 # `lastpost' uses inline shell code...
+                 lastpost => 'echo;echo # Footer for ~/.zshrc',
+                 # ...so its type must be set explicitly.
+                 lastposttype => 'shell-inline' }});
+```
+
+
+The following data is available to concatenation callbacks:
+
+|| Data           | perl  | shell-file       | shell-inline        |
+| callback name   | $_[0] | $DEWI_HOOK_EVENT | $DEWI_HOOK_EVENT    |
+| first argument  | $_[1] | $1               | $DEWI_HOOK_ARG0     |
+| second argument | $_[2] | $2               | $DEWI_HOOK_ARG1     |
+| ...             | ...   | ...              | ...                 |
+| Nth argument    | $_[N] | $<N>             | $DEWI_HOOK_ARG<N-1> |
+
+
 = HOOKS =
 There are a number of places during the execution of //dewi// where
 custom code may be hooked into the system. There are different types of
