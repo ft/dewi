@@ -992,6 +992,9 @@ sub __run_cat_cb {
             $fun->(@args);
             close *STDOUT;
         } elsif ($type eq 'shell-file') {
+            local(%ENV);
+            $ENV{DEWI_HOOK_EVENT} = $args[0];
+            shift @args;
             IPC::Run3::run3(['@@POSIX_SH@@', $fun, @args],
                             undef,
                             $f->{mergedname},
@@ -999,13 +1002,11 @@ sub __run_cat_cb {
                             { append_stdout => 1 });
         } elsif ($type eq 'shell-inline') {
             local(%ENV);
-            $ENV{DEWI_CONCAT_CALLBACK} = $args[0];
-            $ENV{DEWI_INFILE} = $args[1];
-            $ENV{DEWI_INFILE_DIR} = $args[2];
-            $ENV{DEWI_INFILE_NAME} = $args[3];
-            $ENV{DEWI_TRANSFORMED} = $args[4];
-            $ENV{DEWI_CONCATENATE} = $args[5];
-            $ENV{DEWI_MERGED} = $args[6];
+            $ENV{DEWI_HOOK_EVENT} = $args[0];
+            shift @args;
+            for my $i (0 .. $#args) {
+                $ENV{'DEWI_HOOK_ARG' . $i} = $args[$i];
+            }
             IPC::Run3::run3(['@@POSIX_SH@@', q{-c}, $fun],
                             undef,
                             $f->{mergedname},
