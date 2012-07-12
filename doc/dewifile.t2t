@@ -26,7 +26,7 @@ files with dewi.
 
 You actually do not have to know any Perl to use dewi. You can get by just
 fine by cut-and-pasting snippets from the included example code. Here are
-four concepts that may help you to understand what is actually going on:
+five concepts that may help you to understand what is actually going on:
 
 : Comments
 They start in a hash-mark and span to the end of the current line, like this:
@@ -88,6 +88,16 @@ arbitrary. Putting keys in front of values makes complex calls self
 documenting as well. Also, you do not have to always put in all arguments
 to a subroutine call. You can just leave out the ones for which you will
 not be changing the default value anyway.
+
+: Arrayrefs
+
+These are references to arrays. Again like with hashrefs, you can just forget
+about the reference part. In essence, it's //dewi//'s idea of **a list**. You
+form it by putting a list of elements into square brackets, like this:
+\
+```
+    [ "foo bar", "baz", "fred", "alice", "barney", "frob" ]
+```
 
 : Coderefs
 
