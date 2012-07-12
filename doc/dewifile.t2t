@@ -265,6 +265,16 @@ the multi-level subtree (by concatenating the `**srcdir**' part from
 its hashref argument to it).
 
 
+== Predefined Filter Code ==
+These functions may be used as coderef values to the `**filter**' property of
+the `//register()//' function. The current input line is passed as the code's
+only argument.
+
+: **print_filter(** //INPUT_LINE// **)**
+Outputs the input line unfiltered. This is the default filter is no other is
+specified.
+
+
 == Predefined Globbing Code ==
 These functions are to be used as coderef values to the `//register()//'
 function's `**glob**' argument. The `**globarg**' parameter is passed to
