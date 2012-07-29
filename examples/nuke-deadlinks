@@ -40,11 +40,12 @@ sub nuke_deadlinks {
 
     use Cwd;
     $odir = cwd();
-    foreach my $dir (sort keys %__nuke_deadlinks) {
+    DIR: foreach my $dir (sort keys %__nuke_deadlinks) {
         my $key = $dir;
         $dir =~ s!^~!$ENV{HOME}!;
         $dir =~ s/\/+$//;
-        chdir($dir) or die "Couldn't change to $dir!\n";
+        chdir($dir) or do { warn "Couldn't change to $dir!\n";
+                            next DIR; };
         print "Nuking dead symbolic links in $dir/...\n";
         my @dls = grep { -l && ! -e } bsd_glob($__nuke_deadlinks{$key});
         foreach my $dl (sort @dls) {
