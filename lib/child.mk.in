@@ -32,4 +32,4 @@ update:
 	@cp ../.dewi/lib/child.mk Makefile
 
 -include local_dewi.mk
-.PHONY: all deploy withdraw
+.PHONY: all deploy update withdraw
