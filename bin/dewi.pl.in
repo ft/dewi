@@ -1402,9 +1402,9 @@ sub mark_first {
     my (%keep);
 
     foreach my $e (@{ $dat }) {
-        if (defined $e->{$needle} && !defined $keep{$e->{$needle}}) {
+        if (defined $e->{$needle} && !defined $keep{$e->{mergedname}}) {
             $e->{$marker} = 1;
-            $keep{$e->{$needle}} = 'seen';
+            $keep{$e->{mergedname}} = 'seen';
         }
     }
 
