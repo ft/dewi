@@ -103,37 +103,6 @@ ERROR:
     exit 1;
 }
 
-# archiving
-sub tar {
-    my ($dest) = @_;
-
-    if (defined $main::archives{tar}) {
-        die "Already defined tarball: " . $main::archives{tar} . "\n";
-    }
-    $dest =~ s/\/+$//;
-    $main::archives{tar} = $dest;
-}
-
-sub tar_gz {
-    my ($dest) = @_;
-
-    if (defined $main::archives{'tar-gz'}) {
-        die "Already defined tarball: " . $main::archives{'tar-gz'} . "\n";
-    }
-    $dest =~ s/\/+$//;
-    $main::archives{'tar-gz'} = $dest;
-}
-
-sub tar_bz2 {
-    my ($dest) = @_;
-
-    if (defined $main::archives{'tar-bz2'}) {
-        die "Already defined tarball: " . $main::archives{'tar-bz2'} . "\n";
-    }
-    $dest =~ s/\/+$//;
-    $main::archives{'tar-bz2'} = $dest;
-}
-
 # request empty directories
 sub deploy_directory {
     if ($#_ != 0) {
@@ -508,7 +477,7 @@ our $SUFFIX_VERSION = '+git';
 our $VERSION = $MAJOR_VERSION . '.' . $MINOR_VERSION . $SUFFIX_VERSION;
 
 my (%opts);
-our (%hooks, %archives, @regfiles);
+our (%hooks, @regfiles);
 
 my %methods = (
     copy       => \&method_copy,
@@ -1184,153 +1153,6 @@ sub withdraw_files {
     run_hook('post-withdraw', \$base);
 }
 
-# archiving
-sub __gen_archive_name {
-    my ($dest) = @_;
-    my ($format, $rc);
-
-    $format = get_opt('archive-format');
-    if (!defined $format) {
-        $format = '%s';
-    }
-    if ($format =~ m/\%s/) {
-        $rc = sprintf $format, $DEWI{PACKAGE};
-    } else {
-        $rc = $format;
-    }
-    return expand_dir($dest . '/' . $rc . '.tar');
-}
-
-sub __gen_tmp_dir {
-    if (defined $ENV{TMPDIR} && $ENV{TMPDIR} ne '') {
-        return $ENV{TMPDIR};
-    }
-    return '/tmp';
-}
-
-sub __gen_dir_name {
-    my ($tmpdir);
-    my ($format, $rc);
-
-    $tmpdir = __gen_tmp_dir();
-    $format = get_opt('archive-dir-format');
-    if (!defined $format) {
-        $format = 'dewi/%s';
-    }
-    if ($format =~ m/\%s/) {
-        $rc = sprintf $format, $DEWI{PACKAGE};
-    } else {
-        $rc = $format;
-    }
-    return $tmpdir . '/' . $rc;
-}
-
-sub __prepare_archive {
-    my ($dir) = @_;
-
-    ensure_dir($dir);
-    foreach my $f (qw{ Dewifile Makefile }) {
-        xcopy($DEWI{BASE_DIR} . '/' . $DEWI{PACKAGE} . '/' . $f,
-              $dir . '/' . $f);
-    }
-    foreach my $f (@regfiles) {
-        if (defined $f->{deploydir} && $f->{deploydir} eq 'yes') {
-            next;
-        }
-        my ($src, $dstdir, $dstfile);
-        $src = $f->{path};
-        $dstdir = $dir . '/' . $f->{srcdir};
-        $dstfile = $dstdir . '/' . $f->{name};
-
-        ensure_dir($dstdir);
-        xcopy($src, $dstfile);
-    }
-}
-
-sub __tar {
-    my ($dir, $file) = @_;
-    my ($rc);
-
-    $rc = run_dot_dewi_script('/bin/tar.sh', $dir, $file);
-    if ($rc != 0) {
-        die "tar(): Could not create \"$file\" from \"$dir\".\n";
-    }
-}
-
-sub __prepare_and_tar {
-    my ($dest, $mode) = @_;
-    my ($dir, $file, $tmpdir);
-
-    $file = __gen_archive_name($dest);
-    $dir = __gen_dir_name();
-    verbose("Creating archive: '$file$mode'\n");
-    __prepare_archive($dir);
-    __tar($dir, $file);
-    return ($dir, $file);
-}
-
-sub __clean_up_archive_dir {
-    my ($dir) = @_;
-    my ($rc);
-
-    $rc = run_dot_dewi_script('/bin/rmrf.sh', $dir);
-    if ($rc != 0) {
-        die "tar(): Could not remove \"$dir\".\n";
-    }
-}
-
-sub __gzip_file {
-    my ($file) = @_;
-    my ($rc);
-
-    $rc = run_dot_dewi_script('/bin/gzip.sh', $file);
-    if ($rc != 0) {
-        die "tar(): Could not gzip \"$file\".\n";
-    }
-}
-
-sub __bzip2_file {
-    my ($file) = @_;
-    my ($rc);
-
-    $rc = run_dot_dewi_script('/bin/bzip2.sh', $file);
-    if ($rc != 0) {
-        die "tar(): Could not bzip2 \"$file\".\n";
-    }
-}
-
-sub tar {
-    my ($base) = @_;
-    my ($dest, $dir, $file);
-
-    return 0 if (!defined $archives{tar});
-    $dest = $archives{tar};
-    ($dir, $file) = __prepare_and_tar($dest, '');
-    __clean_up_archive_dir($dir);
-}
-
-sub tar_gz {
-    my ($base) = @_;
-    my ($dest, $dir, $file);
-
-    return 0 if (!defined $archives{'tar-gz'});
-    $dest = $archives{'tar-gz'};
-    ($dir, $file) = __prepare_and_tar($dest, '.gz');
-    __clean_up_archive_dir($dir);
-    __gzip_file($file);
-}
-
-sub tar_bz2 {
-    my ($base) = @_;
-    my ($dest, $dir, $file);
-
-    return 0 if (!defined $archives{'tar-bz2'});
-    $dest = $archives{'tar-bz2'};
-    ($dir, $file) = __prepare_and_tar($dest, '.bz2');
-    __clean_up_archive_dir($dir);
-    __bzip2_file($file);
-}
-
 # hooks
 sub register_hook {
     my ($event, $hr) = @_;
@@ -1479,9 +1301,7 @@ sub main {
     my $base = $dirs[-1];
     defaults();
 
-    if ($mode eq 'deploy' || $mode eq 'withdraw'
-            || $mode =~ m/^archive(s|-tar(|-gz|-bz2))$/)
-    {
+    if ($mode eq 'deploy' || $mode eq 'withdraw') {
         set_dewi_hash();
         DewiFile::read_dewifile('../.dewi/config.perl') or return 1;
         DewiFile::read_dewifile('Dewifile') or return 1;
@@ -1496,17 +1316,6 @@ sub main {
         deploy_files($base);
     } elsif ($mode eq 'withdraw') {
         withdraw_files($base);
-    } elsif ($mode eq 'archives') {
-        tar_gz($base);
-        tar_bz2($base);
-        # `tar' must be last, otherwise the .tar file may be reused and removed.
-        tar($base);
-    } elsif ($mode eq 'archive-tar') {
-        tar($base);
-    } elsif ($mode eq 'archive-tar-gz') {
-        tar_gz($base);
-    } elsif ($mode eq 'archive-tar-bz2') {
-        tar_bz2($base);
     } elsif ($mode eq 'parent_help') {
         parent_help();
     } elsif ($mode eq 'child_help') {

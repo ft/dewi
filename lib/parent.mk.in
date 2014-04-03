@@ -10,9 +10,6 @@ include $(DOT_DEWI_DIR)/lib/p_actions.mk
 all:
 	@$(PARENT_HELP)
 
-archive:
-	@$(ARCHIVE_ALL_SUBDIRS)
-
 deploy:
 	@$(DEPLOY_ALL_SUBDIRS)
 

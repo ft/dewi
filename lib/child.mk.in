@@ -10,20 +10,8 @@ include $(DOT_DEWI_DIR)/lib/s_actions.mk
 all:
 	@$(CHILD_HELP)
 
-archive:
-	@$(ARCHIVES)
-
 deploy:
 	@$(DEPLOY_SUBDIR)
-
-tar:
-	@$(ARCHIVE_TAR)
-
-tar-gz:
-	@$(ARCHIVE_TAR_GZ)
-
-tar-bz2:
-	@$(ARCHIVE_TAR_BZ2)
 
 withdraw:
 	@$(WITHDRAW_SUBDIR)
