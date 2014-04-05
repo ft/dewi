@@ -266,6 +266,17 @@ sub __register_defaults {
         debug("register(): Setting default `globarg': (empty string)\n");
     }
 
+    if ($h->{method} eq 'template') {
+        if (!defined $h->{options}) {
+            debug("register(): Setting default `options' for Template.\n");
+            $h->{options} = { };
+        }
+        if (!defined $h->{data}) {
+            debug("register(): Setting default `data' for Template.\n");
+            $h->{data} = { };
+        }
+    }
+
     if ($h->{method} eq 'filtered') {
         if (!defined $h->{filtertype}) {
             debug("register(): Setting default `filtertype': perl\n");
@@ -359,6 +370,10 @@ sub __register {
         }
 
         $new->{method} = $h->{method};
+        if ($new->{method} eq 'template') {
+            $new->{options} = $h->{options};
+            $new->{data} = $h->{data};
+        }
         $new->{filter} = $h->{filter};
         $new->{filtertype} = $h->{filtertype};
         $new->{intercat} = $h->{intercat};
@@ -460,7 +475,8 @@ use File::Copy;
 use File::Spec;
 
 my %optional_features = (
-    external_filters => "tobeseen"
+    external_filters => "tobeseen",
+    templates => "tobeseen"
 );
 
 eval {require IPC::Run3;};
@@ -468,6 +484,13 @@ if ($@) {
     $optional_features{external_filters} = 'missing';
 } else {
     $optional_features{external_filters} = 'gotit';
+}
+
+eval {require Template;};
+if ($@) {
+    $optional_features{templates} = 'missing';
+} else {
+    $optional_features{templates} = 'gotit';
 }
 
 our $NAME = 'dewi';
@@ -484,7 +507,8 @@ my %methods = (
     filtered   => \&method_filtered,
     force_copy => \&method_force_copy,
     hardlink   => \&method_hardlink,
-    symlink    => \&method_symlink
+    symlink    => \&method_symlink,
+    template   => \&method_template
 );
 
 sub method_exists {
@@ -1088,6 +1112,24 @@ sub method_symlink {
     verbose("  _symlink(): $dst\n");
     debug("      source: $src\n");
     xsymlink($src, $dst);
+}
+
+sub method_template {
+    my ($f) = @_;
+    my ($tt);
+    my ($src, $dst, $data, $opts) = ($f->{path}, $f->{mergedname},
+                                     $f->{data}, $f->{options});
+
+    if (!dewi_got_feature('templates')) {
+        print "$src: Cannot use `template' method. The Template module is missing.\n";
+        return 1;
+    }
+    verbose("  _template(): $dst\n");
+    debug("      source: $src\n");
+    return 1 if (get_opt_bool('dryrun'));
+
+    $tt = Template->new() || die $tt->error(), "\n";
+    $tt->process($src, $data, $dst, $opts) || die $tt->error(), "\n";
 }
 
 sub deploy_files {
