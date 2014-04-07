@@ -3,8 +3,6 @@
 # Frank Terbeck <ft@bewatermyfriend.org>, All rights reserved.
 # Terms for redistribution and use can be found in `LICENCE'.
 
-. ./lib/shell.sh
-
 prefix="/usr/local"
 datadir="${prefix}/share/dewi"
 mandir="${prefix}/share/man"

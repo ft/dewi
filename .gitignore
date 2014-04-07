@@ -6,6 +6,7 @@ lib/*
 !lib/*.in
 !lib/shell.sh
 !lib/Dewifile.stub
+Dewifile
 bin/bootstrap.sh
 bin/inall.sh
 doc/*.1

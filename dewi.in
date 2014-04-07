@@ -1,204 +1,322 @@
-#!@@POSIX_SH@@
-# Copyright (c) 2010-2012
+#!@@PERL5@@
+
+# Copyright (c) 2010-2014
 # Frank Terbeck <ft@bewatermyfriend.org>, All rights reserved.
 # Terms for redistribution and use can be found in `LICENCE'.
 
-n=dewi
-op="$1"
-[ $# -ge 1 ] && shift
-ret=0
-datadir="@@DATADIR@@"
-parent=''
-posix_sh="@@POSIX_SH@@"
+use strict;
+use warnings qw(all);
+use English '-no_match_vars';
+use Cwd;
+use File::Basename;
+use File::Copy;
 
-dp() {
-    format="$1"
-    shift
-    printf '%s: '"${format}" "$n" "$@"
+my $n = q{dewi};
+my $POSIX_SH = q{@@POSIX_SH@@};
+my $DATADIR = q{@@DATADIR@@};
+my $VERSION = q{@@CLI_VERSION@@};
+my ($BASE_DIR, $DOT_DEWI);
+
+# Helpers for the operations dispatch table
+
+sub xeq {
+    my ($val0, $val1) = @_;
+    return 1 if ($val0 == $val1);
+    return 0;
 }
 
-__dot_dewi() {
-    [ -d .dewi ] && return 0
-    return 1
+sub xge {
+    my ($val0, $val1) = @_;
+    return 1 if ($val0 >= $val1);
+    return 0;
 }
 
-__mk_dot_dewi() {
-    mkdir .dewi || return 1
-    for dir in bin lib; do
-        mkdir ".dewi/${dir}" || return 1
-    done
-    return 0
+sub xrange {
+    my ($val, $min, $max) = @_;
+    return 1 if ($val >= $min && $val <= $max);
+    return 0;
 }
 
-__cd_parent() {
-    cd "${parent}" || return 1
-    return 0
+# Operations dispatch table
+
+my %ops = (
+    deploy => { cb => \&op_deploy,
+                info => q{Deploy registered files} },
+    completion => { cb => \&op_completion,
+                    info => q{Query for suitable completion results},
+                    args => sub { xeq($_[0], 1) } },
+    foreach => { cb => \&op_foreach,
+                 info => q{Run command in dewi-fied sub-directories},
+                 args => sub { xge($_[0], 1) } },
+    help => { cb => \&op_help,
+              info => q{Show this help text} },
+    init => { cb => \&op_init,
+              info => q{Initialise .dewi directory or sub-directory},
+              args => sub { xrange($_[0], 0, 1) } },
+    update => { cb => \&op_update,
+                info => q{Update .dewi directory} },
+    version => { cb => \&op_version,
+                 info => q{Show version information} },
+    withdraw => { cb => \&op_withdraw,
+                  info => q{Withdraw registered files} } );
+
+# Completion helpers dispatch table
+
+my %completions = (
+    operations => \&cmpl_operations );
+
+if ($#ARGV < 0) {
+    op_help();
+    exit 1;
+}
+my $op = $ARGV[0];
+
+# Operation handlers
+
+sub op_completion {
+    my $cmpl = $ARGV[1];
+    $completions{$cmpl}->() if (defined $completions{$cmpl});
 }
 
-__cd_dot_dewi() {
-    parent="${PWD:-..}"
-    cd .dewi || return 1
-    return 0
+sub op_deploy {
+    dewi(q{deploy});
 }
 
-__copy_bin() {
-    if [ ! -d bin ]; then
-        dp '__copy_bin: No destination directory `bin'\'' found.\n'
-        return 1
-    fi
-    for file in "${datadir}"/bin/*; do
-        case "${file}" in
-            *~) continue ;;
-            *.in) continue ;;
-        esac
-
-        cp "${file}" bin || return 1
-    done
-    return 0
+sub op_foreach {
+    shift @ARGV;
+    map { dewi_foreach($_) } dewi_subdirs();
 }
 
-__copy_config() {
-    cp "${datadir}/lib/config.mk" . || return 1
-    cp "${datadir}/lib/config.perl" . || return 1
+sub op_help {
+    print <<EOF
+usage: dewi <operation>
+
+Where operation is one of:
+EOF
+;
+    map {printf q{  %-12s    %s.}.qq{\n}, $_, $ops{$_}->{info}} sort keys %ops;
+    print qq{\n};
 }
 
-__copy_config_perl_compat() {
-    if [ ! -e config.perl ]; then
-        cp "${datadir}/lib/config.perl" . || return 1
-    fi
-    return 0
+sub op_init {
+    my $sd = $ARGV[1];
+    if (is_dewi_root()) {
+        # Init sub-dir below dewi-root
+        return init_subdir($sd) if (defined $sd);
+        die "dewi: `init' in dewi-root needs to specify sub-directory!\n";
+    } elsif (is_dewi_subdir()) {
+        die "dewi: Naming a sub-directory is only valid"
+            . " in a dewi-root directory!\n" if (defined $sd);
+        return init_subdir(q{.});
+    } else {
+        return init_root();
+    }
 }
 
-__copy_lib() {
-    if [ ! -d lib ]; then
-        dp '__copy_lib: No destination directory `lib'\'' found.\n'
-        return 1
-    fi
-    for file in "${datadir}"/lib/*; do
-        case "${file}" in
-            *~) continue ;;
-            *.in) continue ;;
-            */config.mk) continue ;;
-        esac
-
-        cp "${file}" lib || return 1
-    done
-    return 0
+sub op_version {
+    print <<EOF
+dewi cli version $VERSION
+EOF
+;
 }
 
-__copy_mk_parent() {
-    cp .dewi/lib/parent.mk Makefile || return 1
-    return 0
+sub op_withdraw {
+    dewi(q{withdraw});
 }
 
-__copy_mk_sub() {
-    @@POSIX_SH@@ .dewi/bin/inall.sh update || return 1
-    return 0
+# Completion helpers
+
+sub cmpl_operations {
+    map { printf q{%s:%s}.qq{\n}, $_, $ops{$_}->{info} } keys %ops;
 }
 
-__dewi_init() {
-    if __dot_dewi; then
-        dp 'init: .dewi exist already. Did you mean `update'\''?\n'
-        ret=1
-        return
-    fi
-    __mk_dot_dewi &&
-    __cd_dot_dewi &&
-    __copy_lib &&
-    __copy_bin &&
-    __copy_config &&
-    __cd_parent &&
-    __copy_mk_parent
-    ret="$?"
+# Utilities
+
+sub _copy_addons {
+    _copy_files_from_dir(q{addons});
 }
 
-__dewi_update() {
-    if ! __dot_dewi; then
-        dp 'init: .dewi does not exist. Did you mean `init'\''?\n'
-        ret=1
-        return
-    fi
-    __cd_dot_dewi &&
-    __copy_lib &&
-    __copy_bin &&
-    __copy_config_perl_compat &&
-    __cd_parent &&
-    __copy_mk_parent &&
-    __copy_mk_sub
-    return "$?"
+sub _copy_dummy_dewi_file {
+    xcopy(q{.dewi/lib/Dewifile.stub},
+          q{.dewi});
 }
 
-__dewi_add() {
-    "${posix_sh}" .dewi/bin/bootstrap.sh "$1"
+sub _copy_files_from_dir {
+    my ($dir) = @_;
+    xmkdir(qq{.dewi/$dir});
+    foreach my $file (_regular_files(qq{$DATADIR/$dir})) {
+        xcopy($file, $dir);
+    }
 }
 
-__dewi_foreach() {
-    @@POSIX_SH@@ .dewi/bin/inall.sh -run "$@"
-    return $?
+sub _copy_global_dewifile {
+    xcopy(qq{$DATADIR/Dewifile}, q{.dewi});
 }
 
-__realpath() {
-    (cd "$1" && pwd)
+sub _copy_lib {
+    _copy_files_from_dir(q{lib});
 }
 
-basedir="$(pwd)"
-realbasedir="${basedir}"
-while [ "${realbasedir}" != '/' ]; do
-    [ -d "${basedir}/.dewi" ] && break
-    basedir=${basedir}/..
-    realbasedir="$(__realpath "${basedir}")"
-done
-dewiroot="${realbasedir}"
+sub _regular_files {
+    my ($dir) = @_;
 
-case "$op" in
-    add)
-        if ! __dot_dewi; then
-            dp 'add: .dewi does not exist. Not a dewi parent directory.\n'
-            ret=1
-            return
-        fi
-        if [ "$#" = 0 ]; then
-            dp 'usage: dewi add <subdirectory>\n'
-            ret=1
-        elif [ "$#" = 1 ] && [ "$1" = '.' ]; then
-            for dir in ./*; do
-                [ ! -d "${dir}" ] && continue
-                __dewi_add "${dir}"
-            done
-        else
-            for dir in "$@"; do
-                __dewi_add "${dir}"
-            done
-        fi
-        ;;
-    foreach)
-        __dewi_foreach "$@"
-        ret=$?
-        ;;
-    init)
-        if [ "${dewiroot}" != '/' ]; then
-            dp 'A parent (%s) has a `.dewi'\'' directory. Giving up.\n' "${dewiroot}"
-        else
-            __dewi_init
-        fi
-        ;;
-    update)
-        if [ "${dewiroot}" != '/' ] && [ "$(pwd)" != "${dewiroot}" ]; then
-            dp 'A parent (%s) has a `.dewi'\'' directory.\n' "${dewiroot}"
-            dp 'Assuming you wanted to run `update'\'' there.\n'
-            cd "${dewiroot}" || exit 1
-        fi
-        __dewi_update
-        ;;
-    '')
-        dp 'No operation specified.\n'
-        ret=1
-        ;;
-    *)
-        printf '%s'
-        dp 'Unknown operation specified: `%s'\''\n' "$op"
-        ret=1
-        ;;
-esac
+    opendir my $dh, $dir
+        or die "dewi: Cannot read contents of ‘$dir’: $ERRNO\n";
+    my @d = grep { -f $_ } readdir($dh);
+    closedir $dh;
+    return @d;
+}
 
-exit "$ret"
+sub cd_and_do {
+    my $subdir = shift;
+    my $fnc = shift;
+    chdir($subdir)
+        or die "dewi: Could not change to directory `$subdir': $ERRNO\n";
+    $fnc->(@_);
+    chdir(q{..})
+        or die "dewi: Could not change back to parent directory: $ERRNO\n";
+}
+
+sub cd_and_lib_dewi {
+    my ($subdir, $op) = @_;
+    cd_and_do($subdir, sub { lib_dewi($op) });
+}
+
+sub dewi {
+    my ($op) = @_;
+    my $type = root_or_subdir_guard($op);
+    if ($type eq q{root}) {
+        map { cd_and_lib_dewi($_, $op) } dewi_subdirs();
+    } else {
+        lib_dewi($op);
+    }
+}
+
+sub dewi_foreach {
+    my ($subdir) = @_;
+    my $code = join q{ }, @ARGV;
+    cd_and_do($subdir, sub { system(q{@@POSIX_SH@@}, q{-c}, $code); });
+}
+
+sub dewi_subdirs {
+    opendir my $dh, q{.}
+        or die "dewi: Cannot read contents of current directory: $ERRNO\n";
+    my @d = grep { ($_ !~ m/^(.|..)$/) && -d $_ && is_dewi_subdir($_) }
+                 readdir($dh);
+    closedir $dh;
+    return @d;
+}
+
+sub got_dot_dewi {
+    my ($path) = @_;
+    $path = q{.} unless (defined $path);
+    return 1 if (-d qq{$path/.dewi});
+    return 0;
+}
+
+sub got_dewifile {
+    my ($path) = @_;
+    $path = q{.} unless (defined $path);
+    return 1 if (-f qq{$path/Dewifile});
+    return 0;
+}
+
+sub init_root {
+    die "dewi: Current directory is already a dewi-root (.dewi exists)!\n"
+        if (is_dewi_root());
+    xmkdir(q{.dewi});
+    _copy_addons();
+    _copy_lib();
+    _copy_global_dewifile();
+}
+
+sub init_subdir {
+    my ($path) = @_;
+    die "dewi: Current directory already contains a Dewifile!\n"
+        if (-f qq{$path/Dewifile});
+    _copy_dummy_dewi_file();
+}
+
+sub is_dewi_root {
+    my ($path) = @_;
+    return got_dot_dewi($path);
+}
+
+sub is_dewi_subdir {
+    my ($path) = @_;
+    return 1 if (got_dewifile($path) && parent_dir_is_dewi_root($path));
+    return 0;
+}
+
+sub lib_dewi {
+    my ($op) = @_;
+    unless (defined $DOT_DEWI) {
+        die "dewi: BUG: \$DOT_DEWI undefined in `lib_dewi()'!\n";
+    }
+    system(q{@@PERL5@@}, "$DOT_DEWI/bin/dewi.pl", $op);
+}
+
+sub parent_dir_is_dewi_root {
+    my ($path) = @_;
+    $path = q{.} unless (defined $path);
+    return 1 if (-d qq{$path/../.dewi});
+    return 0;
+}
+
+
+sub root_or_subdir_guard {
+    my ($op) = @_;
+    return q{root} if (is_dewi_root());
+    return q{subdir} if (is_dewi_subdir());
+    die "dewi: `$op' is only valid in a dewi-root or sub-directory!\n";
+}
+
+sub subdir_guard {
+    my ($op) = @_;
+    die "dewi: $op is only valid in a dewi sub-directory!\n"
+        unless (is_dewi_subdir());
+}
+
+sub xcopy {
+    my ($src, $dst) = @_;
+
+    copy($src, $dst) or die "copy($src, $dst) failed: $ERRNO\n";
+    return 1;
+}
+
+sub xmkdir {
+    my ($dir) = @_;
+
+    mkdir($dir) or die "mkdir($dir) failed: $ERRNO\n";
+    return 1;
+}
+
+# Environment
+
+if (is_dewi_root()) {
+    $BASE_DIR = Cwd::abs_path(Cwd::getcwd());
+} elsif (is_dewi_subdir()) {
+    $BASE_DIR = Cwd::abs_path(Cwd::getcwd() . "/..");
+}
+
+$DOT_DEWI = "$BASE_DIR/.dewi" if (defined $BASE_DIR);
+
+# Top-level operations dispatch
+
+if (defined $ops{$op}) {
+    if (defined $ops{$op}->{args}){
+        unless ($ops{$op}->{args}->($#ARGV)) {
+            op_help();
+            exit 1;
+        }
+    } elsif ($#ARGV != 0) {
+        op_help();
+        exit 1;
+    }
+    $ops{$op}->{cb}->();
+} else {
+    op_help();
+    exit 1;
+}
+
+exit 0;

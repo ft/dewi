@@ -3,8 +3,52 @@
 # Frank Terbeck <ft@bewatermyfriend.org>, All rights reserved.
 # Terms for redistribution and use can be found in `LICENCE'.
 
-. ./lib/shell.sh
+die() {
+    printf '%s\n' "$1"
+    exit 1
+}
 
+find_binary() {
+    prog="$1"
+    [ -z "$prog" ] && return 1
+
+    case "$prog" in
+        /*)
+            if [ -x "$prog" ]; then
+                printf '%s' "$prog"
+                return 0
+            fi
+            ;;
+    esac
+
+    ret=1
+    oifs="$IFS"
+    IFS=:
+    for dir in $PATH; do
+        [ -z "$dir" ] && continue
+        if [ -x "$dir/$prog" ]; then
+            printf '%s' "$dir/$prog"
+            ret=0
+            break
+        fi
+    done
+
+    IFS="$oifs"
+    unset oifs
+    return "$ret"
+}
+
+resolv_path() {
+    [ -d "$1" ] || return 1
+    (
+        cd "$1" || exit 1
+        printf '%s' "$(pwd)"
+        exit 0
+    )
+    return $?
+}
+
+cli_version='2014-04-06#001'
 posix_sh_unres=sh
 perl_unres=perl
 make_unres=make
@@ -87,6 +131,15 @@ This system does not appear to have the IPC::Run3 Perl module installed.
     ipcrun3='sorry, buddy.'
 fi
 
+if got_perl_module "Template"; then
+    perltemplate='gotit'
+else
+    printf '
+This system does not appear to have the Template Perl module installed.
+`dewi'\'' uses that module to implement `template'\'' method.\n\n'
+    perltemplate='sorry, buddy.'
+fi
+
 printf '%s\n' "Configuration:"
 printf '  make:      %s\n' "$make"
 printf '  perl:      %s\n' "$perl"
@@ -97,6 +150,11 @@ if [ "$ipcrun3" = 'gotit' ]; then
 else
     printf '  IPC::Run3: not found\n'
 fi
+if [ "$perltemplate" = 'gotit' ]; then
+    printf '  Template:  found\n'
+else
+    printf '  Template:  not found\n'
+fi
 printf '\n'
 
 __generate() {
@@ -105,11 +163,12 @@ __generate() {
         s!\@\@BIN_MAKE\@\@!'"$make"'!;
         s!\@\@PERL5\@\@!'"$perl"'!;
         s!\@\@POSIX_SH\@\@!'"$posix_sh"'!;
+        s!\@\@CLI_VERSION\@\@!'"$cli_version"'!;
     '
 }
 
 printf '%s\n' "Generating files:"
-for file in "dewi.in" bin/*."in" lib/*."in"; do
+for file in "dewi.in" "Dewifile.in" bin/*."in" lib/*."in"; do
     gen_file=${file%.in}
     printf '  %s\n' "$gen_file"
     __generate < "$file" > "$gen_file"

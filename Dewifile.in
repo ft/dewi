@@ -1,0 +1,6 @@
+#!@@PERL5@@
+
+# Each "dewi deploy" and "dewi withdraw" from all subdirectories will
+# load this file *before* the directory's `Dewifile'.
+
+end();
