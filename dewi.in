@@ -1504,10 +1504,10 @@ sub dewi {
     my $type = root_or_subdir_guard($op);
 
     if ($type eq q{root}) {
-        DewiFile::read_dewifile(q{.dewi//Dewifile});
+        DewiFile::read_dewifile(q{.dewi/Dewifile});
         map { cd_and_lib_dewi($_, $op) } dewi_subdirs();
     } else {
-        DewiFile::read_dewifile(q{../.dewi//Dewifile});
+        DewiFile::read_dewifile(q{../.dewi/Dewifile});
         lib_dewi($op);
     }
 }
