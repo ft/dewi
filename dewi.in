@@ -437,7 +437,7 @@ sub read_dewifile {
         if ($@ eq '') {
             warn qq{$file empty?\n};
         } else {
-            warn qq{Could not read $file:\n  - Reason: $!\n};
+            warn qq{Could not read $file:\n  - Reason: $ERRNO\n};
         }
         return 0;
     } elsif ($rc != 1) {
@@ -671,7 +671,7 @@ sub xcopy {
     if (get_opt_bool('dryrun')) {
         return 1;
     }
-    copy($src, $dst) or die "copy($src, $dst) failed: $!\n";
+    copy($src, $dst) or die "copy($src, $dst) failed: $ERRNO\n";
     return 1;
 }
 
@@ -679,7 +679,7 @@ sub xdir_is_empty {
     my ($dir) = @_;
     my ($dh);
 
-    opendir $dh, $dir or die "xdir_is_empty(): Could not open $dir: $!\n";
+    opendir $dh, $dir or die "xdir_is_empty(): Could not open $dir: $ERRNO\n";
     if (scalar(grep(!/^\.\.?$/, readdir($dh)) == 0)) {
         closedir $dh;
         return 1;
@@ -696,14 +696,14 @@ sub xhardlink {
     }
 
     link Cwd::realpath($src), $dst
-        or die "Could not create hardlink: $!\n";
+        or die "Could not create hardlink: $ERRNO\n";
 }
 
 sub xrmdir {
     # Assumes that it is never called in dryrun mode.
     my ($dir) = @_;
 
-    rmdir $dir or die "rmdir() failed: $!\n";
+    rmdir $dir or die "rmdir() failed: $ERRNO\n";
 }
 
 sub xsymlink {
@@ -719,7 +719,7 @@ sub xsymlink {
         xunlink($dst);
     }
     symlink Cwd::realpath($src), $dst
-        or die "Could not create symlink: $!\n";
+        or die "Could not create symlink: $ERRNO\n";
 }
 
 sub stat_names {
@@ -760,7 +760,7 @@ sub xunlink {
         return 1;
     }
 
-    unlink $file or die "unlink() failed: $!\n";
+    unlink $file or die "unlink() failed: $ERRNO\n";
 }
 
 sub ensure_dir {
@@ -797,7 +797,7 @@ sub ensure_dir {
             if (!get_opt_bool('dryrun')) {
                 verbose("  _mkdir(): $sofar\n");
                 mkdir $sofar
-                    or die "Could not mkdir($sofar).\n" . "Reason: $!\n";
+                    or die "Could not mkdir($sofar).\n" . "Reason: $ERRNO\n";
             }
         }
     }
@@ -845,8 +845,8 @@ sub __filter_perl {
     } else {
         $mode = q{>>};
     }
-    open $in, "<", $src or die "Could not open `$src': $!\n";
-    open $out, $mode, $dst or die "Could not open `$dst': $!\n";
+    open $in, "<", $src or die "Could not open `$src': $ERRNO\n";
+    open $out, $mode, $dst or die "Could not open `$dst': $ERRNO\n";
 
     while (my $line = <$in>) {
         chomp $line;
@@ -1059,7 +1059,7 @@ sub method_symlink {
     if (-l $dst) {
         $not_a_symlink = 0;
         my ($sstat, $tstat, $t);
-        $t = readlink $dst or die "  _symlink(): readlink() failed: $!\n";
+        $t = readlink $dst or die "  _symlink(): readlink() failed: $ERRNO\n";
         $tstat = xstat($t);
         $sstat = xstat($src);
         if (($tstat->{exist} == 1) && ($tstat->{ino} == $sstat->{ino})) {
