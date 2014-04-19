@@ -1302,7 +1302,6 @@ use File::Copy;
 my $n = q{dewi};
 my $POSIX_SH = q{@@POSIX_SH@@};
 my $DATADIR = q{@@DATADIR@@};
-my ($BASE_DIR, $DOT_DEWI);
 
 # Helpers for the operations dispatch table
 
@@ -1620,18 +1619,7 @@ sub subdir_guard {
 
 # Environment
 
-if (is_dewi_root()) {
-    $BASE_DIR = Cwd::abs_path(Cwd::getcwd());
-} elsif (is_dewi_subdir()) {
-    $BASE_DIR = Cwd::abs_path(Cwd::getcwd() . "/..");
-}
-
 DewiInternal::defaults();
-
-$DOT_DEWI = "$BASE_DIR/.dewi" if (defined $BASE_DIR);
-
-print "dewi: --- This is a dry run ---\n"
-    if (DewiInternal::get_opt_bool('dryrun'));
 
 # signals
 $SIG{INT} = sub {
