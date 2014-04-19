@@ -429,6 +429,11 @@ sub read_dewifile {
     my ($file) = @_;
     my ($d, $rc);
 
+    if (!-e $file) {
+        warn qq{dewi: $file does not exist!\n};
+        return;
+    }
+
     $rc = do $file;
     if (!defined $rc && $EVAL_ERROR) {
         warn qq{Could not parse $file:\n  - Reason: $@\n};
@@ -1504,10 +1509,10 @@ sub dewi {
     my $type = root_or_subdir_guard($op);
 
     if ($type eq q{root}) {
-        DewiFile::read_dewifile(q{.dewi/Dewifile});
+        DewiFile::read_dewifile(Cwd::abs_path(q{.dewi/Dewifile}));
         map { cd_and_lib_dewi($_, $op) } dewi_subdirs();
     } else {
-        DewiFile::read_dewifile(q{../.dewi/Dewifile});
+        DewiFile::read_dewifile(Cwd::abs_path(q{../.dewi/Dewifile}));
         lib_dewi($op);
     }
 }
