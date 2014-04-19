@@ -1450,7 +1450,7 @@ sub _init_dummy_dewi_file {
 #
 #register( { glob      => 'my_rc_file',
 #            method    => 'symlink',
-#            transform => \&makedotfile } );
+#            transform => \\\&makedotfile } );
 
 dewifile_is_empty();
 EOF
