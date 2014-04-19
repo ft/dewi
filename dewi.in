@@ -1299,7 +1299,6 @@ use Cwd;
 use File::Basename;
 use File::Copy;
 
-my $n = q{dewi};
 my $POSIX_SH = q{@@POSIX_SH@@};
 my $DATADIR = q{@@DATADIR@@};
 
