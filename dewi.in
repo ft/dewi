@@ -612,24 +612,28 @@ sub set_opt {
 
 # setup the DEWI hash
 sub set_dewi_hash {
+    my ($fromroot) = @_;
     %DewiFile::DEWI = (
         NAME           => $NAME,
         MAJOR_VERSION  => $MAJOR_VERSION,
         MINOR_VERSION  => $MINOR_VERSION,
         SUFFIX_VERSION => $SUFFIX_VERSION,
         VERSION        => $VERSION,
-        BASE_DIR       => base_dir(),
-        DOT_DEWI       => dot_dewi(),
-        PACKAGE        => dewi_package()
+        BASE_DIR       => base_dir($fromroot),
+        DOT_DEWI       => dot_dewi($fromroot),
+        PACKAGE        => dewi_package($fromroot)
     );
 }
 
 sub base_dir {
+    my ($fromroot) = @_;
+    return Cwd::abs_path(Cwd::getcwd()) if (defined $fromroot);
     return Cwd::abs_path(basename(Cwd::getcwd() . "/.."))
 }
 
 sub dot_dewi {
-    my $base = base_dir();
+    my ($fromroot) = @_;
+    my $base = base_dir($fromroot);
     my $dd = "$base/.dewi";
 
     if (! -d $dd) {
@@ -640,6 +644,8 @@ sub dot_dewi {
 }
 
 sub dewi_package {
+    my ($fromroot) = @_;
+    return undef if (defined $fromroot);
     return basename(Cwd::abs_path(Cwd::getcwd()));
 }
 
@@ -1509,9 +1515,14 @@ sub dewi {
     my $type = root_or_subdir_guard($op);
 
     if ($type eq q{root}) {
+        DewiInternal::set_dewi_hash(q{fromroot});
         DewiFile::read_dewifile(Cwd::abs_path(q{.dewi/Dewifile}));
         map { cd_and_lib_dewi($_, $op) } dewi_subdirs();
     } else {
+        # This is a bit of doubled work. However, to ensure %DEWI is always
+        # set, it has to be done here (well, or I could rewrite the whole
+        # involved code a bit; but - as always - laziness).
+        DewiInternal::set_dewi_hash();
         DewiFile::read_dewifile(Cwd::abs_path(q{../.dewi/Dewifile}));
         lib_dewi($op);
     }
