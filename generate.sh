@@ -168,7 +168,7 @@ __generate() {
 }
 
 printf '%s\n' "Generating files:"
-for file in "dewi.in" "Dewifile.in" bin/*."in" lib/*."in"; do
+for file in "dewi.in" "Dewifile.in"; do
     gen_file=${file%.in}
     printf '  %s\n' "$gen_file"
     __generate < "$file" > "$gen_file"

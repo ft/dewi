@@ -4,6 +4,1294 @@
 # Frank Terbeck <ft@bewatermyfriend.org>, All rights reserved.
 # Terms for redistribution and use can be found in `LICENCE'.
 
+package DewiFile;
+
+use strict;
+use warnings qw(all);
+use English '-no_match_vars';
+use File::Find;
+use File::Glob qw{ bsd_glob };
+use File::Spec;
+use File::Basename;
+
+my $reg_calls = 0;
+our (%DEWI);
+
+# user definable settings
+my (%user_settings);
+sub user_set {
+    my ($key, $val) = @_;
+    $user_settings{$key} = $val;
+}
+
+sub user_get {
+    my ($key) = @_;
+    return $user_settings{$key};
+}
+
+sub user_get_bool {
+    my ($key) = @_;
+    return DewiInternal::__get_opt_bool(\&user_get, $key);
+}
+
+# output
+sub verbose {
+    DewiInternal::verbose(@_);
+    return 1;
+}
+
+sub debug {
+    DewiInternal::debug(@_);
+    return 1;
+}
+
+# option handling
+sub set_opt {
+    my ($key, $val) = @_;
+
+    DewiInternal::set_opt($key, $val);
+    print "rc.perl: Set option '$key' to \"$val\"\n"
+        if (DewiInternal::get_opt_bool('debug'));
+    return 1;
+}
+
+sub get_opt {
+    return DewiInternal::get_opt(@_);
+}
+
+sub get_opt_bool {
+    return DewiInternal::get_opt_bool(@_);
+}
+
+# helpers
+# hooks
+sub add_hook {
+    my ($h) = @_;
+    my ($ev);
+
+    goto ERROR if (ref($h) ne 'HASH');
+    $h->{type} = 'perl' if (!defined $h->{type});
+    goto ERROR if (!defined $h->{code} || !defined $h->{event});
+    if ($h->{type} ne 'perl' && $h->{type} ne 'shell-inline'
+            && $h->{type} ne 'shell-file')
+    {
+        print "The type parameter needs to be one of these:\n";
+        print "  - perl\n";
+        print "  - shell-file\n";
+        print "  - shell-inline\n";
+        print "\n";
+        goto ERROR;
+    }
+    if ($h->{type} eq 'perl' && ref($h->{code}) ne 'CODE') {
+        print "add_hook(): When `type' is \"perl\","
+            . " `code' needs to be a coderef.\n\n";
+        goto ERROR;
+    }
+    if ($h->{type} eq 'shell-file' && !-f ref($h->{code})) {
+        print "add_hook(): When `type' is \"shell-file\","
+            . " `code' needs to be an existing file.\n\n";
+        goto ERROR;
+    }
+    $ev = $h->{event};
+    delete($h->{event});
+    DewiInternal::register_hook($ev, $h);
+    return 1;
+
+ERROR:
+    print "usage: add_hook(<hash-ref>);\n";
+    print "See dewifile(5) for details.\n";
+    exit 1;
+}
+
+# request empty directories
+sub deploy_directory {
+    if ($#_ != 0) {
+        die "usage: deploy_directory('directory_name');\n";
+    }
+    my ($dir) = @_;
+
+    my $new = {};
+    $new->{destination} = DewiInternal::expand_dir($dir);
+    $new->{deploydir} = 'yes';
+    debug("deploy_directory(): \"" . $new->{destination} . "\"\n");
+    push @DewiInternal::regfiles, $new;
+}
+
+# predefined `glob' code
+sub regularfiles {
+    my ($glob) = @_;
+
+    return grep { -f } bsd_glob($glob);
+}
+
+sub recursivefiles {
+    my ($data) = @_;
+    my (@files, $regex);
+
+    if (ref($data) ne 'HASH') {
+        my $save = $data;
+        $data = {};
+        $data->{basedir} = $save;
+    }
+    $data->{basedir} = '.' if (!defined $data->{basedir});
+    $data->{regex} = '.' if (!defined $data->{regex});
+
+    $regex = qr{$data->{regex}};
+    my $findcb = sub {
+        return if !-f;
+        return if (!m/$regex/);
+        push @files, $File::Find::name;
+    };
+    find($findcb, $data->{basedir});
+    return @files;
+}
+
+# predefined `post-glob' code
+sub remove_tilde {
+    # throw away stuff that matches "*~"
+    my (@ret);
+
+    foreach my $file (@_) {
+        if ($file !~ m/~$/) {
+            push @ret, $file
+        } else {
+            debug("Weeding out backup file: `$file'\n");
+        }
+    }
+
+    return @ret;
+}
+
+sub remove_hashes {
+    # throw away stuff that matches "#*#"
+    my (@ret);
+
+    foreach my $file (@_) {
+        my $name = basename($file);
+        if ($name !~ m/^#.+#$/) {
+            push @ret, $file
+        } else {
+            debug("Weeding out temporary file: `$file'\n");
+        }
+    }
+
+    return @ret;
+}
+
+# predefined `transform' code
+sub notransform {
+    return $_[0];
+}
+
+sub makedotfile {
+    return '.' . $_[0];
+}
+
+# predefined `destination' code
+sub recursive_dirname {
+    my ($prefix, $data) = @_;
+    return expand_path(merge_path($prefix, $data->{srcdir}));
+}
+
+# predefined `filter' code
+sub print_filter {
+    my ($line) = @_;
+    return $line;
+}
+
+# path name helpers
+sub merge_path {
+    if ($#_ != 1) {
+        die "Usage: merge_path(<part_one>, <part_two>);\n";
+    }
+    DewiInternal::merge_name(@_);
+}
+
+sub expand_path {
+    if ($#_ != 0) {
+        die "Usage: merge_path(<directory>);\n";
+    }
+    DewiInternal::expand_dir(@_);
+}
+
+# The `register()' subroutine
+sub __register_defaults {
+    # This sets default values for the different meaningful keys and
+    # also does some error-checking on values where it makes sense.
+    my ($h) = @_;
+
+    if (!defined $h->{glob}) {
+        die "Cannot call register() without `glob' argument.\n";
+    }
+    if (ref($h->{glob}) eq 'CODE' && !defined &{ $h->{glob} }) {
+        die
+        "register(): Unknown coderef in `glob'.\n".
+        "                        Call number $reg_calls.\n";
+    }
+
+    if (!defined $h->{destination}) {
+        $h->{destination} = '~/';
+        debug("register(): Setting default `destination': ~/\n");
+    }
+
+    if (!defined $h->{method}) {
+        $h->{method} = 'copy';
+        debug("register(): Setting default `method': copy\n");
+    }
+    if (!DewiInternal::method_exists($h->{method})) {
+        die
+        "register(): Unknown `method' parameter: \"" . $h->{method} . "\"\n".
+        "                        Call number $reg_calls.\n";
+    }
+
+    if (!defined $h->{transform}) {
+        $h->{transform} = \&notransform;
+        debug("register(): Setting default `transform': `notransform'\n");
+    }
+
+    if (!defined &{ $h->{transform} }) {
+        die
+        "register(): Unknown coderef in `transform'.\n".
+        "                        Call number $reg_calls.\n";
+    }
+
+    if (defined $h->{post_glob} && !defined &{ $h->{post_glob} }) {
+        die
+        "register(): Unknown coderef in `post_glob'.\n".
+        "                        Call number $reg_calls.\n";
+    }
+
+    if (!defined $h->{globarg}) {
+        $h->{globarg} = '';
+        debug("register(): Setting default `globarg': (empty string)\n");
+    }
+
+    if ($h->{method} eq 'template') {
+        if (!defined $h->{options}) {
+            debug("register(): Setting default `options' for Template.\n");
+            $h->{options} = { };
+        }
+        if (!defined $h->{data}) {
+            debug("register(): Setting default `data' for Template.\n");
+            $h->{data} = { };
+        }
+    }
+
+    if ($h->{method} eq 'filtered') {
+        if (!defined $h->{filtertype}) {
+            debug("register(): Setting default `filtertype': perl\n");
+            $h->{filtertype} = 'perl';
+        }
+        if (!defined $h->{filter}) {
+            $h->{filtertype} = 'perl';
+            debug("register(): Setting default `filter': \&print_filter\n");
+            $h->{filter} = \&print_filter;
+        }
+        if ($h->{filtertype} eq 'perl' && !defined &{ $h->{filter} }) {
+            die "register(): perl filter: Unknown coderef.\n".
+                "                        Call number $reg_calls.\n";
+        }
+        if ($h->{filtertype} eq 'shell-file' && !-e $h->{filter}) {
+            die "register(): shell-file filter: File does not exist `" .
+                $h->{filter} . "'.\n".
+                "                        Call number $reg_calls.\n";
+        }
+    } elsif (defined $h->{concatenate}) {
+        die "register(): `concatenate' only allowed with method `filtered'.\n"
+          . "            Call number $reg_calls.\n";
+    }
+
+    if (defined $h->{intercat}) {
+        my $ic = $h->{intercat};
+
+        if (!defined $ic->{type} || $ic->{type} eq 'perl') {
+            foreach my $cb (qw{firstpre firstpost
+                               lastpre lastpost
+                               otherpre otherpost})
+            {
+                if ((!defined $ic->{$cb.'type'} || $ic->{$cb.'type'} eq 'perl')
+                    && defined $ic->{$cb} && !defined &{ $ic->{$cb} }) {
+                    die "register(): concatenate callback `$cb' does not point"
+                        . "                        to a valid Perl subroutine."
+                        . " Call number $reg_calls.\n";
+                }
+            }
+        }
+    }
+
+    return 1;
+}
+
+sub __register {
+    my ($h) = @_;
+    my (@files);
+
+    if (ref($h->{glob}) eq 'CODE') {
+        @files = $h->{glob}->($h->{globarg});
+    } elsif (ref($h->{glob}) eq 'ARRAY') {
+        foreach my $entry (@{ $h->{glob} }) {
+            my @f = bsd_glob($entry);
+            if (defined $h->{post_glob_single}
+                && ref $h->{post_glob_single} eq 'CODE') {
+                @f = $h->{post_glob_single}->(@f);
+            }
+            push @files, @f;
+        }
+    } else {
+        @files = bsd_glob($h->{glob});
+    }
+    if (defined $h->{post_glob} && ref $h->{post_glob} eq 'CODE') {
+        @files = $h->{post_glob}->(@files);
+    }
+
+    if (ref($h->{destination}) ne 'CODE') {
+        $h->{destination} = DewiInternal::expand_dir($h->{destination});
+    }
+    foreach my $path (@files) {
+        my $new = {};
+        my ($volume,$directories,$file) = File::Spec->splitpath( $path );
+
+        $new->{path} = $path;
+        $directories =~ s/\/+$//;
+        $new->{srcdir} = $directories;
+        $new->{name} = $file;
+        if (defined $h->{concatenate}) {
+            $new->{concatenate} = $h->{transform}->($h->{concatenate});
+            $new->{transformed} = $new->{concatenate};
+        } else {
+            $new->{transformed} = $h->{transform}->($file);
+        }
+
+        if (ref($h->{destination}) eq 'CODE') {
+            my %copy = %{ $new };
+            $new->{destination} = $h->{destination}->( $h->{destarg}, \%copy );
+        } else {
+            $new->{destination} = $h->{destination};
+        }
+
+        $new->{method} = $h->{method};
+        if ($new->{method} eq 'template') {
+            $new->{options} = $h->{options};
+            $new->{data} = $h->{data};
+        }
+        $new->{filter} = $h->{filter};
+        $new->{filtertype} = $h->{filtertype};
+        $new->{intercat} = $h->{intercat};
+        $new->{mergedname} =
+            DewiInternal::merge_name($new->{destination}, $new->{transformed});
+
+        debug(
+            "register(): \""      . $new->{path}        . "\"\n" .
+            "           Name: \"" . $new->{name}        . "\"\n");
+        debug(
+            "    Concatenate: \"" . $new->{concatenate} . "\"\n")
+                 if (defined $new->{concatenate});
+        debug(
+            "    Transformed: \"" . $new->{transformed} . "\"\n" .
+            "         Source: \"" . $new->{srcdir}      . "\"\n" .
+            "    Destination: \"" . $new->{destination} . "\"\n" .
+            "    Merged-Name: \"" . $new->{mergedname}  . "\"\n" .
+            "         Method: "   . $new->{method}      . "\n");
+
+        push @DewiInternal::regfiles, $new;
+    }
+
+    return 1;
+}
+
+sub register {
+    $reg_calls++;
+    if ($#_ != 0) {
+        die "usage: register( { foo => val0, bar => val1, ... } );\n";
+    }
+    my ($arg) = @_;
+    my $type = ref $arg;
+
+    if ($type eq '') {
+        my $hr = { glob      => "$arg",
+                   transform => \&makedotfile};
+        __register_defaults($hr);
+        __register($hr);
+    } elsif ($type eq 'HASH') {
+        __register_defaults($arg);
+        __register($arg);
+    } else {
+        die
+        "The argument to the register function must be either a\n".
+        "scalar or a hash reference.\n";
+    }
+
+    return 1;
+}
+
+# Dewifile reader
+sub read_dewifile {
+    my ($file) = @_;
+    my ($d, $rc);
+
+    $rc = do $file;
+    if (!defined $rc && $EVAL_ERROR) {
+        warn qq{Could not parse $file:\n  - Reason: $@\n};
+        return 0;
+    } elsif (!defined $rc) {
+        if ($@ eq '') {
+            warn qq{$file empty?\n};
+        } else {
+            warn qq{Could not read $file:\n  - Reason: $!\n};
+        }
+        return 0;
+    } elsif ($rc != 1) {
+        warn qq{Reading $file did not return 1.\n}
+        ."  While this is not a fatal problem, it is good practice, to let\n"
+        ."  perl script files return 1. Just put a '1;' into the last line\n"
+        ."  of this file to get rid of this warning.\n";
+    }
+
+    return 1;
+}
+
+# place holder function for the bootstrapping functionality
+sub dewifile_is_empty {
+    print
+"This Dewifile is empty. Is was probably created by dewi's bootstrap mode.\n".
+"You will need to register the files you want dewi to deploy. This is\n".
+"merely a placeholder.   Thanks for your attention.\n";
+}
+
+# a glorified '1;' for the end of Dewifiles
+sub end {
+    return 1;
+}
+
+###########################################################################
+
+package DewiInternal;
+
+use strict;
+use warnings qw(all);
+use English '-no_match_vars';
+use Cwd;
+use File::Basename;
+use File::Copy;
+use File::Spec;
+
+my %optional_features = (
+    external_filters => "tobeseen",
+    templates => "tobeseen"
+);
+
+eval {require IPC::Run3;};
+if ($@) {
+    $optional_features{external_filters} = 'missing';
+} else {
+    $optional_features{external_filters} = 'gotit';
+}
+
+eval {require Template;};
+if ($@) {
+    $optional_features{templates} = 'missing';
+} else {
+    $optional_features{templates} = 'gotit';
+}
+
+our $NAME = 'dewi';
+our $MAJOR_VERSION = 0;
+our $MINOR_VERSION = 2;
+our $SUFFIX_VERSION = '+git';
+our $VERSION = $MAJOR_VERSION . '.' . $MINOR_VERSION . $SUFFIX_VERSION;
+
+my (%opts);
+our (%hooks, @regfiles);
+
+my %methods = (
+    copy       => \&method_copy,
+    filtered   => \&method_filtered,
+    force_copy => \&method_force_copy,
+    hardlink   => \&method_hardlink,
+    symlink    => \&method_symlink,
+    template   => \&method_template
+);
+
+sub method_exists {
+    my ($method) = @_;
+
+    if (defined $methods{$method}) {
+        return 1;
+    }
+    return 0;
+}
+
+sub dewi_got_feature {
+    my ($f) = @_;
+
+    if (defined $optional_features{$f} && $optional_features{$f} eq 'gotit') {
+        return 1;
+    }
+    return 0;
+}
+
+sub clear_state {
+    @regfiles = ( );
+    %hooks = ( );
+}
+
+# output
+sub verbose {
+    print @_ if (get_opt_bool('verbose') || get_opt_bool('debug'));
+    return 1;
+}
+
+sub debug {
+    print @_ if (get_opt_bool('debug'));
+    return 1;
+}
+
+# option handling
+sub defaults {
+    set_opt('filter_always', 'no');
+    set_opt('debug',         'no');
+    set_opt('dryrun',        'no');
+    set_opt('verbose',       'no');
+}
+
+sub get_opt {
+    my ($key) = @_;
+    return $opts{$key};
+}
+
+sub __is_bool_false {
+    my ($v) = @_;
+
+    return 1 if (!defined $v
+                 || $v eq 'no'
+                 || $v eq 'no_thanks'
+                 || $v eq 'off'
+                 || $v eq 'false'
+                 || $v eq '0');
+    return 0;
+}
+
+sub __is_bool_true {
+    my ($v) = @_;
+
+    return 0 if (!defined $v);
+    return 1 if ($v eq 'yes'
+                 || $v eq 'yes_please'
+                 || $v eq 'on'
+                 || $v eq 'true'
+                 || $v eq '1');
+    return 0;
+}
+
+sub __get_opt_bool {
+    my ($go, $key) = @_;
+    my ($v);
+
+    $v = $go->($key);
+    return 0 if (__is_bool_false($v));
+    return 1 if (__is_bool_true($v));
+
+    warn "Unknown value for boolean option \"$key\" ($v). Assuming false.\n";
+    return 0;
+}
+
+sub get_opt_bool {
+    my ($key) = @_;
+    return __get_opt_bool(\&get_opt, $key);
+}
+
+sub set_opt {
+    my ($key, $val) = @_;
+    $opts{$key} = $val;
+}
+
+# setup the DEWI hash
+sub set_dewi_hash {
+    %DewiFile::DEWI = (
+        NAME           => $NAME,
+        MAJOR_VERSION  => $MAJOR_VERSION,
+        MINOR_VERSION  => $MINOR_VERSION,
+        SUFFIX_VERSION => $SUFFIX_VERSION,
+        VERSION        => $VERSION,
+        BASE_DIR       => base_dir(),
+        DOT_DEWI       => dot_dewi(),
+        PACKAGE        => dewi_package()
+    );
+}
+
+sub base_dir {
+    return Cwd::abs_path(basename(Cwd::getcwd() . "/.."))
+}
+
+sub dot_dewi {
+    my $base = base_dir();
+    my $dd = "$base/.dewi";
+
+    if (! -d $dd) {
+        die "No .dewi in '$base'. Giving up.\n";
+    }
+
+    return $dd;
+}
+
+sub dewi_package {
+    return basename(Cwd::abs_path(Cwd::getcwd()));
+}
+
+# utilities
+sub expand_dir {
+    my ($str) = @_;
+
+    $str =~ s!^~!$ENV{HOME}!;
+    $str =~ s/\/+$//;
+    return $str;
+}
+
+sub run_dot_dewi_script {
+    my ($script, @args) = @_;
+    my (@cmd, $rc);
+
+    if (get_opt_bool('dryrun')) {
+        return 0;
+    }
+    @cmd = ('@@POSIX_SH@@', $DEWI{DOT_DEWI} . $script);
+    push @cmd, @args if ($#args >= 0);
+    system @cmd;
+    $rc = $?;
+
+    if ($rc == -1) {
+        die "run_dot_dewi_script(): `system()' failed!\n";
+    }
+    return $rc;
+}
+
+sub xcopy {
+    my ($src, $dst) = @_;
+
+    if (get_opt_bool('dryrun')) {
+        return 1;
+    }
+    copy($src, $dst) or die "copy($src, $dst) failed: $!\n";
+    return 1;
+}
+
+sub xdir_is_empty {
+    my ($dir) = @_;
+    my ($dh);
+
+    opendir $dh, $dir or die "xdir_is_empty(): Could not open $dir: $!\n";
+    if (scalar(grep(!/^\.\.?$/, readdir($dh)) == 0)) {
+        closedir $dh;
+        return 1;
+    }
+    closedir $dh;
+    return 0;
+}
+
+sub xhardlink {
+    my ($src, $dst) = @_;
+
+    if (get_opt_bool('dryrun')) {
+        return 1;
+    }
+
+    link Cwd::realpath($src), $dst
+        or die "Could not create hardlink: $!\n";
+}
+
+sub xrmdir {
+    # Assumes that it is never called in dryrun mode.
+    my ($dir) = @_;
+
+    rmdir $dir or die "rmdir() failed: $!\n";
+}
+
+sub xsymlink {
+    my ($src, $dst) = @_;
+
+    if (get_opt_bool('dryrun')) {
+        return 1;
+    }
+
+    if (-l $dst) {
+        # if we're here, $dst exists, is a symlink but links somewhere
+        # else. Remove it, so the symlink() below can succeed.
+        xunlink($dst);
+    }
+    symlink Cwd::realpath($src), $dst
+        or die "Could not create symlink: $!\n";
+}
+
+sub stat_names {
+    my ($num) = @_;
+    my @names = qw{ dev ino mode nlink uid gid rdev size
+                    atime mtime ctime blksize blocks };
+
+    return $names[$num];
+}
+
+sub xstat {
+    my ($file) = @_;
+    my ($i, %stat, @data);
+
+    @data = stat($file);
+    $i = 0;
+    %stat = map { stat_names($i++) => $_ } @data;
+    if (-e _) {
+        $stat{exist} = 1;
+    } else {
+        $stat{exist} = 0;
+    }
+
+    $stat{plainfile} = 0;
+    $stat{dir} = 0;
+    if (-f _) {
+        $stat{plainfile} = 1;
+    } elsif (-d _) {
+        $stat{dir} = 1;
+    }
+    return \%stat;
+}
+
+sub xunlink {
+    my ($file) = @_;
+
+    if (get_opt_bool('dryrun')) {
+        return 1;
+    }
+
+    unlink $file or die "unlink() failed: $!\n";
+}
+
+sub ensure_dir {
+    # think: mkdir -p /foo/bar/baz
+    my ($wantdir) = @_;
+    my (@parts, $sofar);
+
+    if (-d $wantdir) {
+        return 1;
+    }
+
+    if ($wantdir =~ q{^/}) {
+        $sofar = q{/};
+    } else {
+        $sofar = q{};
+    }
+
+    @parts = split /\//, $wantdir;
+    foreach my $part (@parts) {
+        if ($part eq q{}) {
+            next;
+        }
+        $sofar = (
+                  $sofar eq q{}
+                    ? $part
+                    : (
+                        $sofar eq q{/}
+                          ? q{/} . $part
+                          : $sofar . q{/} . $part
+                      )
+                 );
+
+        if (!-d $sofar) {
+            if (!get_opt_bool('dryrun')) {
+                verbose("  _mkdir(): $sofar\n");
+                mkdir $sofar
+                    or die "Could not mkdir($sofar).\n" . "Reason: $!\n";
+            }
+        }
+    }
+
+    return 1;
+}
+
+# aaaand ACTION.
+sub merge_name {
+    my ($dest, $file) = @_;
+    return File::Spec->catfile($dest, $file);
+}
+
+sub method_copy {
+    my ($f) = @_;
+    my ($src, $dst) = ($f->{path}, $f->{mergedname});
+    my ($dstat, $sstat);
+
+    $sstat = xstat($src);
+    $dstat = xstat($dst);
+    if (($dstat->{exist} == 1) && ($sstat->{ino} == $dstat->{ino})) {
+        die "  _copy(): $src and $dst are the same file. Please resolve!\n";
+    }
+    if (($dstat->{exist} == 1) && ($sstat->{mtime} <= $dstat->{mtime})) {
+        verbose("  _copy(): $dst (source is not newer, skipping)\n");
+        debug("   source: $src\n");
+        return 1;
+    }
+    verbose("  _copy(): $dst\n");
+    debug("   source: $src\n");
+    xcopy($src, $dst);
+}
+
+sub __filter_perl {
+    my ($f) = @_;
+    my ($filter, $src, $dst, $cat) = ($f->{filter},
+                                      $f->{path},
+                                      $f->{mergedname},
+                                      $f->{concatenate});
+    my ($in, $out, $mode);
+
+    return 1 if (get_opt_bool('dryrun'));
+    if (!defined $cat) {
+        $mode = q{>};
+    } else {
+        $mode = q{>>};
+    }
+    open $in, "<", $src or die "Could not open `$src': $!\n";
+    open $out, $mode, $dst or die "Could not open `$dst': $!\n";
+
+    while (my $line = <$in>) {
+        chomp $line;
+        $line = $filter->($line);
+        print {$out} "$line\n";
+    }
+
+    close $out;
+    close $in;
+}
+
+sub __filter_shell_file {
+    my ($f) = @_;
+    my ($filter, $src, $dst, $cat) = ($f->{filter},
+                                      $f->{path},
+                                      $f->{mergedname},
+                                      $f->{concatenate});
+    my ($cmd, $mode);
+
+    if (!dewi_got_feature('external_filters')) {
+        print "Cannot run `shell-file' filter as required.\n";
+        print "This dewi has no support for external filters. Giving up.\n";
+        return 1;
+    }
+    return 1 if (get_opt_bool('dryrun'));
+
+    if (!defined $cat) {
+        $mode = 0;
+    } else {
+        $mode = 1;
+    }
+    $cmd = [ '@@POSIX_SH@@', "$filter" ];
+    IPC::Run3::run3($cmd, $src, $dst, undef, { append_stdout => $mode });
+}
+
+sub __filter_shell_inline {
+    my ($f) = @_;
+    my ($filter, $src, $dst, $cat) = ($f->{filter},
+                                      $f->{path},
+                                      $f->{mergedname},
+                                      $f->{concatenate});
+    my ($cmd, $mode);
+
+    if (!dewi_got_feature('external_filters')) {
+        print "Cannot run `shell-inline' filter as required.\n";
+        print "This dewi has no support for external filters. Giving up.\n";
+        return 1;
+    }
+    return 1 if (get_opt_bool('dryrun'));
+
+    if (!defined $cat) {
+        $mode = 0;
+    } else {
+        $mode = 1;
+    }
+    $cmd = [ '@@POSIX_SH@@', '-c', "$filter" ];
+    IPC::Run3::run3($cmd, $src, $dst, undef, { append_stdout => $mode });
+}
+
+sub __filter {
+    my ($f) = @_;
+    my ($type) = ($f->{filtertype});
+
+    if ($type eq 'perl') {
+        __filter_perl($f)
+    } elsif ($type eq 'shell-file') {
+        __filter_shell_file($f)
+    } elsif ($type eq 'shell-inline') {
+        __filter_shell_inline($f)
+    } else {
+        die "__filter(): Unknown filter type `$type'\n";
+    }
+}
+
+sub __run_cat_cb {
+    my ($f, $cb) = @_;
+    my $fun = $f->{intercat}->{$cb};
+    my $sptype = $f->{intercat}->{$cb . 'type'};
+    my $type = defined $sptype ? $sptype : $f->{intercat}->{type};
+
+    if (!dewi_got_feature('external_filters')
+        && (defined $type && $type =~ m/^shell-(file|inline)$/))
+    {
+        warn "WARNING: External `intercat' callbacks require the"
+           . " `external_filters'\n  feature provided by IPC::Run3 which is"
+           . " not available here.\n";
+        return 0;
+    }
+
+    if (defined $fun) {
+        my @args = ($cb,
+                    $f->{path},
+                    $f->{srcdir},
+                    $f->{name},
+                    $f->{transformed},
+                    $f->{concatenate},
+                    $f->{mergedname});
+
+        if (ref $fun eq 'CODE') {
+            local(*STDOUT);
+            open *STDOUT, q{>>}, $f->{mergedname}
+                or die "Couldn't open " . $f->path . " for appending.\n";
+            $fun->(@args);
+            close *STDOUT;
+        } elsif ($type eq 'shell-file') {
+            local(%ENV);
+            $ENV{DEWI_HOOK_EVENT} = $args[0];
+            shift @args;
+            IPC::Run3::run3(['@@POSIX_SH@@', $fun, @args],
+                            undef,
+                            $f->{mergedname},
+                            undef,
+                            { append_stdout => 1 });
+        } elsif ($type eq 'shell-inline') {
+            local(%ENV);
+            $ENV{DEWI_HOOK_EVENT} = $args[0];
+            shift @args;
+            for my $i (0 .. $#args) {
+                $ENV{'DEWI_HOOK_ARG' . $i} = $args[$i];
+            }
+            IPC::Run3::run3(['@@POSIX_SH@@', q{-c}, $fun],
+                            undef,
+                            $f->{mergedname},
+                            undef,
+                            { append_stdout => 1 });
+        }
+    }
+    return 1;
+}
+
+sub method_filtered {
+    my ($f) = @_;
+    my ($src, $dst, $cat) = ($f->{path}, $f->{mergedname}, $f->{concatenate});
+    my ($dstat, $sstat);
+
+    $sstat = xstat($src);
+    $dstat = xstat($dst);
+    if (($dstat->{exist} == 1) && ($sstat->{ino} == $dstat->{ino})) {
+        die "  _filtered(): $src and $dst are the same file. Please resolve!\n";
+    }
+    if ((!get_opt_bool('filter_always') && !defined $f->{needsrefresh})
+            && ($dstat->{exist} == 1) && ($sstat->{mtime} <= $dstat->{mtime}))
+    {
+        verbose("  _filtered(): $dst (source is not newer, skipping)\n");
+        debug("       source: $src\n");
+        return 1;
+    }
+
+    if (defined $f->{catfirst}) {
+        truncate $dst, 0;
+        __run_cat_cb($f, 'firstpre');
+    } elsif (defined $f->{catlast}) {
+        __run_cat_cb($f, 'lastpre');
+    } elsif (defined $f->{concatenate}) {
+        __run_cat_cb($f, 'otherpre');
+    }
+
+    verbose("  _filtered(): $dst" . (defined $cat ? " [concat: $src]" : "")
+                                  . "\n");
+    debug("       source: $src\n");
+    __filter($f);
+
+    if (defined $f->{catfirst}) {
+        __run_cat_cb($f, 'firstpost');
+    } elsif (defined $f->{catlast}) {
+        __run_cat_cb($f, 'lastpost');
+    } elsif (defined $f->{concatenate}) {
+        __run_cat_cb($f, 'otherpost');
+    }
+}
+
+sub method_force_copy {
+    my ($f) = @_;
+    my ($src, $dst) = ($f->{path}, $f->{mergedname});
+    my ($dstat, $sstat);
+
+    $sstat = xstat($src);
+    $dstat = xstat($dst);
+    if (($dstat->{exist} == 1) && ($sstat->{ino} == $dstat->{ino})) {
+        die
+        "  _force_copy(): $src and $dst are the same file. Please resolve!\n";
+    }
+    verbose("  _force_copy(): $dst\n");
+    debug("         source: $src\n");
+    xcopy($src, $dst);
+}
+
+sub method_hardlink {
+    my ($f) = @_;
+    my ($src, $dst) = ($f->{path}, $f->{mergedname});
+    my ($dstat, $sstat);
+
+    $sstat = xstat($src);
+    $dstat = xstat($dst);
+    if (($dstat->{exist} == 1) && ($sstat->{ino} == $dstat->{ino})) {
+        verbose("  _hardlink(): $dst (hardlinked to source, skipping)\n");
+        debug("       source: $src\n");
+        return 1;
+    }
+    verbose("  _hardlink(): $dst\n");
+    debug("       source: $src\n");
+    xhardlink($src, $dst);
+}
+
+sub method_symlink {
+    my ($f) = @_;
+    my ($src, $dst) = ($f->{path}, $f->{mergedname});
+    my ($not_a_symlink);
+
+    if (-l $dst) {
+        $not_a_symlink = 0;
+        my ($sstat, $tstat, $t);
+        $t = readlink $dst or die "  _symlink(): readlink() failed: $!\n";
+        $tstat = xstat($t);
+        $sstat = xstat($src);
+        if (($tstat->{exist} == 1) && ($tstat->{ino} == $sstat->{ino})) {
+            verbose("  _symlink(): $dst (symlinked to source, skipping)\n");
+            debug("      source: $src\n");
+            return 1;
+        }
+    } else {
+        $not_a_symlink = 1;
+    }
+
+    if ($not_a_symlink && -e $dst) {
+        die
+        "  _symlink(): destination $dst exists but is not a symlink.\n" .
+        "              Please resolve!\n";
+    }
+    verbose("  _symlink(): $dst\n");
+    debug("      source: $src\n");
+    xsymlink($src, $dst);
+}
+
+sub method_template {
+    my ($f) = @_;
+    my ($tt);
+    my ($src, $dst, $data, $opts) = ($f->{path}, $f->{mergedname},
+                                     $f->{data}, $f->{options});
+
+    if (!dewi_got_feature('templates')) {
+        print "$src: Cannot use `template' method. The Template module is missing.\n";
+        return 1;
+    }
+    verbose("  _template(): $dst\n");
+    debug("      source: $src\n");
+    return 1 if (get_opt_bool('dryrun'));
+
+    $tt = Template->new() || die $tt->error(), "\n";
+    $tt->process($src, $data, $dst, $opts) || die $tt->error(), "\n";
+}
+
+sub deploy_files {
+    my ($base) = @_;
+
+    run_hook('pre-deploy', \$base);
+    print "Deploying $base...\n";
+    foreach my $f (@regfiles) {
+        ensure_dir($f->{destination});
+        if (defined $f->{deploydir} && $f->{deploydir} eq 'yes') {
+            next;
+        }
+        $methods{$f->{method}}->($f);
+    }
+    run_hook('post-deploy', \$base);
+}
+
+sub withdraw_files {
+    my ($base) = @_;
+    my (%dests);
+
+    run_hook('pre-withdraw', \$base);
+    print "Withdrawing $base...\n";
+    foreach my $f (@regfiles) {
+        if (!defined $dests{$f->{destination}}) {
+            $dests{$f->{destination}} = 'xxx';
+        }
+        if (defined $f->{deploydir} && $f->{deploydir} eq 'yes') {
+            next;
+        }
+        if (defined $f->{concatenate} && !defined $f->{catfirst}) {
+            next;
+        }
+
+        if (!-e $f->{mergedname}) {
+            verbose("  withdraw: " . $f->{mergedname}
+                . " does not exist. Ignoring.\n");
+        } else {
+            verbose("  withdraw: unlink(" . $f->{mergedname} . ")\n");
+            xunlink($f->{mergedname});
+        }
+    }
+
+    foreach my $d (sort { length $b <=> length $a } keys %dests) {
+        if (!-d $d) {
+            verbose("  withdraw: $d does not exist. Ignoring.\n");
+            next;
+        }
+        if (Cwd::realpath($d) eq Cwd::realpath($ENV{HOME})) {
+            # no, we're not removing ~.
+            next;
+        }
+        if (get_opt_bool('dryrun')) {
+            verbose("  dryrun: Test if $d is empty and if so remove it.\n");
+        } elsif (xdir_is_empty($d)) {
+            verbose(
+                "  withdraw: rmdir($d) (empty directory)\n");
+            xrmdir($d);
+        } else {
+            verbose("  withdraw: `$d' is not empty. Leaving it alone.\n");
+        }
+    }
+    run_hook('post-withdraw', \$base);
+}
+
+# hooks
+sub register_hook {
+    my ($event, $hr) = @_;
+
+    push @{ $hooks{$event} }, $hr;
+    return 1;
+}
+
+sub run_shell_hook_file {
+    my ($ev, $file, @args) = @_;
+    my (@cmd);
+
+    push @cmd, '@@POSIX_SH@@';
+    foreach my $scal (@args) {
+        push @cmd, $$scal;
+    }
+    $ENV{DEWI_HOOK_EVENT} = $ev;
+    system(@cmd);
+    delete($ENV{DEWI_HOOK_EVENT});
+}
+
+sub run_shell_hook_inline {
+    my ($ev, $code, @args) = @_;
+    my (@env_args, $i);
+
+    $ENV{DEWI_HOOK_EVENT} = $ev;
+    $i = 0;
+    foreach my $scal (@args) {
+        push @env_args, "DEWI_HOOK_ARG$i";
+        $ENV{"DEWI_HOOK_ARG$i"} = $$scal;
+        $i++;
+    }
+    system(('@@POSIX_SH@@', '-c', $code));
+    delete($ENV{DEWI_HOOK_EVENT});
+    foreach my $key (@env_args) {
+        delete($ENV{$key});
+    }
+}
+
+sub run_hook {
+    # The @args should be a set of scalar references. They *must* be references,
+    # in fact, because `run_shell_hook_file()' dereferences them before passing
+    # the scalars as arguments to the script file. `run_shell_hook_inline()'
+    # behaves similarly.
+    my ($event, @args) = @_;
+
+    if (!defined $hooks{$event} || scalar @{ $hooks{$event} } == 0) {
+        return 0;
+    }
+
+    foreach my $h (@{ $hooks{$event} }) {
+        if ($h->{type} eq 'perl') {
+            $h->{code}->($event, @args);
+        } elsif ($h->{type} eq 'shell-file') {
+            run_shell_hook_file($event, $h->{code}, @args);
+        } elsif ($h->{type} eq 'shell-inline') {
+            run_shell_hook_inline($event, $h->{code}, @args);
+        } else {
+            die "BUG: Unknown hook type: " . $h->{type} . ". Giving up.\n";
+        }
+    }
+
+    return 1
+}
+
+# Post processing `@regfiles'
+sub mark_first {
+    my ($needle, $marker, $dat) = @_;
+    my (%keep);
+
+    foreach my $e (@{ $dat }) {
+        if (defined $e->{$needle} && !defined $keep{$e->{mergedname}}) {
+            $e->{$marker} = 1;
+            $keep{$e->{mergedname}} = 'seen';
+        }
+    }
+
+    return 1;
+}
+
+sub concatenate_dependencies {
+    my (%prev, %todo, %stats);
+    my ($key) = ('needsrefresh');
+
+    foreach my $e (@regfiles) {
+        my ($f, $m) = ($e->{path},
+                       $e->{mergedname});
+
+        # If $m is not defined, it's not for us (`deploydir' maybe).
+        next if (!defined $m);
+        if (!defined $stats{$m}) {
+            $stats{$m} = xstat($m);
+        }
+
+        if (defined $todo{$m}) {
+            $e->{$key} = 1;
+        } elsif (sub { my $s = xstat($f);
+                       return 1 if (($stats{$m}->{exist} == 0)
+                                        || ($s->{mtime} > $stats{$m}->{mtime}));
+                       return 0}->()) {
+            $todo{$m} = 1;
+            $e->{$key} = 1;
+            foreach my $old (@{ $prev{$m} }) {
+                $old->{$key} = 1;
+            }
+        } else {
+            push @{ $prev{$m} }, $e;
+        }
+    }
+}
+
+sub post_process_req_files {
+    # The `concatenate' feature needs to know what the first part of a
+    # concatenation is, so it can truncate the destination file beforehand.
+    mark_first('concatenate', 'catfirst', \@regfiles);
+    # For more features, `concatenate' also needs to know the last part of a
+    # concatenation...
+    mark_first('concatenate', 'catlast', [ reverse @regfiles ]);
+    # Also with `concatenate', a destination file depends on several source
+    # files. Now we could opt to just regenerate concatenate files every time,
+    # _or_ we just check if at least one of the input files are newer then the
+    # destination. Needs to be done here, because the rest of the code works
+    # file by file.
+    concatenate_dependencies();
+}
+
+###########################################################################
+
+package main;
+
 use strict;
 use warnings qw(all);
 use English '-no_match_vars';
@@ -14,7 +1302,6 @@ use File::Copy;
 my $n = q{dewi};
 my $POSIX_SH = q{@@POSIX_SH@@};
 my $DATADIR = q{@@DATADIR@@};
-my $VERSION = q{@@CLI_VERSION@@};
 my ($BASE_DIR, $DOT_DEWI);
 
 # Helpers for the operations dispatch table
@@ -89,6 +1376,10 @@ sub op_foreach {
 
 sub op_help {
     print <<EOF
+  +-------------------------------------------------+
+  | dewi - deploy and withdraw configuration files  |
+  +-------------------------------------------------+
+
 usage: dewi <operation>
 
 Where operation is one of:
@@ -109,13 +1400,15 @@ sub op_init {
             . " in a dewi-root directory!\n" if (defined $sd);
         return init_subdir(q{.});
     } else {
+        die "dewi: root needs to be initialised before sub-directory!\n"
+            if (defined $sd);
         return init_root();
     }
 }
 
 sub op_version {
     print <<EOF
-dewi cli version $VERSION
+dewi cli version $DewiInterbal::VERSION
 EOF
 ;
 }
@@ -137,20 +1430,46 @@ sub _copy_addons {
 }
 
 sub _copy_dummy_dewi_file {
-    xcopy(q{.dewi/lib/Dewifile.stub},
-          q{.dewi});
+    DewiInternal::xcopy(q{.dewi/lib/Dewifile.stub},
+                        q{.dewi});
+}
+
+sub _init_dummy_dewi_file {
+    my $f = q{.dewi/Dewifile.sub};
+    open my $fh, q{>}, $f or die "Could not open `$f': $ERRNO\n";
+    print {$fh} <<EOF
+#!@@PERL5@@
+# This is the placeholder Dewifile for freshly dewified subdirectories.
+# Remove its content and fill it with something useful.
+
+# Here is a bit example code to get you started:
+#
+#set_opt('debug',   'true');
+#set_opt('dryrun',  'true');
+#set_opt('verbose', 'true');
+#
+#register( { glob      => 'my_rc_file',
+#            method    => 'symlink',
+#            transform => \&makedotfile } );
+
+dewifile_is_empty();
+EOF
+;
+    close $fh;
 }
 
 sub _copy_files_from_dir {
     my ($dir) = @_;
-    xmkdir(qq{.dewi/$dir});
-    foreach my $file (_regular_files(qq{$DATADIR/$dir})) {
-        xcopy($file, $dir);
+    my $src = qq{$DATADIR/$dir};
+    DewiInternal::ensure_dir(qq{.dewi/$dir});
+    return unless (-d $src);
+    foreach my $file (_regular_files($src)) {
+        DewiInternal::xcopy($file, $dir);
     }
 }
 
 sub _copy_global_dewifile {
-    xcopy(qq{$DATADIR/Dewifile}, q{.dewi});
+    DewiInternal::xcopy(qq{$DATADIR/Dewifile}, q{.dewi});
 }
 
 sub _copy_lib {
@@ -185,6 +1504,7 @@ sub cd_and_lib_dewi {
 sub dewi {
     my ($op) = @_;
     my $type = root_or_subdir_guard($op);
+
     if ($type eq q{root}) {
         map { cd_and_lib_dewi($_, $op) } dewi_subdirs();
     } else {
@@ -201,7 +1521,9 @@ sub dewi_foreach {
 sub dewi_subdirs {
     opendir my $dh, q{.}
         or die "dewi: Cannot read contents of current directory: $ERRNO\n";
-    my @d = grep { ($_ !~ m/^(.|..)$/) && -d $_ && is_dewi_subdir($_) }
+    my @d = sort grep { ($_ !~ m/^(.|..|.dewi)$/)
+                        && -d $_
+                        && is_dewi_subdir($_) }
                  readdir($dh);
     closedir $dh;
     return @d;
@@ -224,10 +1546,11 @@ sub got_dewifile {
 sub init_root {
     die "dewi: Current directory is already a dewi-root (.dewi exists)!\n"
         if (is_dewi_root());
-    xmkdir(q{.dewi});
+    DewiInternal::ensure_dir(q{.dewi});
     _copy_addons();
     _copy_lib();
     _copy_global_dewifile();
+    _init_dummy_dewi_file();
 }
 
 sub init_subdir {
@@ -250,10 +1573,28 @@ sub is_dewi_subdir {
 
 sub lib_dewi {
     my ($op) = @_;
-    unless (defined $DOT_DEWI) {
-        die "dewi: BUG: \$DOT_DEWI undefined in `lib_dewi()'!\n";
+    my $cwd = Cwd::cwd();
+    my @dirs = File::Spec->splitdir($cwd);
+    my $base = $dirs[-1];
+
+    DewiInternal::defaults();
+    DewiInternal::clear_state();
+    DewiInternal::set_dewi_hash();
+    DewiFile::read_dewifile($DewiFile::DEWI{DOT_DEWI} . q{/Dewifile})
+            or return 1;
+    DewiFile::read_dewifile('Dewifile') or return 1;
+    DewiInternal::post_process_req_files();
+
+    print "dewi: --- This is a dry run ---\n"
+        if (DewiInternal::get_opt_bool('dryrun'));
+
+    if ($op eq q{deploy}) {
+        DewiInternal::deploy_files($base);
+    } elsif ($op eq q{withdraw}) {
+        DewiInternal::withdraw_files($base);
+    } else {
+        die "dewi: BUG: Unknown operation `$op'!\n";
     }
-    system(q{@@PERL5@@}, "$DOT_DEWI/bin/dewi.pl", $op);
 }
 
 sub parent_dir_is_dewi_root {
@@ -277,20 +1618,6 @@ sub subdir_guard {
         unless (is_dewi_subdir());
 }
 
-sub xcopy {
-    my ($src, $dst) = @_;
-
-    copy($src, $dst) or die "copy($src, $dst) failed: $ERRNO\n";
-    return 1;
-}
-
-sub xmkdir {
-    my ($dir) = @_;
-
-    mkdir($dir) or die "mkdir($dir) failed: $ERRNO\n";
-    return 1;
-}
-
 # Environment
 
 if (is_dewi_root()) {
@@ -299,7 +1626,23 @@ if (is_dewi_root()) {
     $BASE_DIR = Cwd::abs_path(Cwd::getcwd() . "/..");
 }
 
+DewiInternal::defaults();
+
 $DOT_DEWI = "$BASE_DIR/.dewi" if (defined $BASE_DIR);
+
+print "dewi: --- This is a dry run ---\n"
+    if (DewiInternal::get_opt_bool('dryrun'));
+
+# signals
+$SIG{INT} = sub {
+    print "dewi: Got SIGINT. Exiting failing, as requested.\n";
+    exit 1;
+};
+
+$SIG{HUP} = sub {
+    print "dewi: Got SIGHUP. Exiting succeeding, as requested.\n";
+    exit 0;
+};
 
 # Top-level operations dispatch
 
