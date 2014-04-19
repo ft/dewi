@@ -1505,8 +1505,10 @@ sub dewi {
     my $type = root_or_subdir_guard($op);
 
     if ($type eq q{root}) {
+        DewiFile::read_dewifile(q{.dewi//Dewifile});
         map { cd_and_lib_dewi($_, $op) } dewi_subdirs();
     } else {
+        DewiFile::read_dewifile(q{../.dewi//Dewifile});
         lib_dewi($op);
     }
 }
@@ -1579,8 +1581,6 @@ sub lib_dewi {
     DewiInternal::defaults();
     DewiInternal::clear_state();
     DewiInternal::set_dewi_hash();
-    DewiFile::read_dewifile($DewiFile::DEWI{DOT_DEWI} . q{/Dewifile})
-            or return 1;
     DewiFile::read_dewifile('Dewifile') or return 1;
     DewiInternal::post_process_req_files();
 
