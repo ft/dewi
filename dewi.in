@@ -1481,10 +1481,6 @@ sub _copy_global_dewifile {
     DewiInternal::xcopy(qq{$DATADIR/Dewifile}, q{.dewi});
 }
 
-sub _copy_lib {
-    _copy_files_from_dir(q{lib});
-}
-
 sub _regular_files {
     my ($dir) = @_;
 
@@ -1564,7 +1560,6 @@ sub init_root {
         if (is_dewi_root());
     DewiInternal::ensure_dir(q{.dewi});
     _copy_addons();
-    _copy_lib();
     _copy_global_dewifile();
     _init_dummy_dewi_file();
 }
