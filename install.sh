@@ -70,32 +70,14 @@ __create_dirs() {
     [ ! -d "${docdir}" ] && __mkdir "${docdir}"
     [ ! -d "${docdir}/examples" ] && __mkdir "${docdir}/examples"
     [ ! -d "${datadir}" ] && __mkdir "${datadir}"
-    [ ! -d "${datadir}/bin" ] && __mkdir "${datadir}/bin"
-    [ ! -d "${datadir}/lib" ] && __mkdir "${datadir}/lib"
-}
-
-__install_bin() {
-    for file in ./bin/*; do
-        case "${file}" in
-            *~) continue ;;
-            *.in) continue ;;
-        esac
-        __copy "${file}" "${datadir}/bin/${file##*/}"
-    done
-}
-
-__install_lib() {
-    for file in ./lib/*; do
-        case "${file}" in
-            *~) continue ;;
-            *.in) continue ;;
-        esac
-        __copy "${file}" "${datadir}/lib/${file##*/}"
-    done
 }
 
 __install_tool() {
     __copy_x dewi "${prefix}/bin/dewi"
+}
+
+__install_datadir() {
+    __copy Dewifile "${datadir}/Dewifile"
 }
 
 __install_man() {
@@ -110,7 +92,7 @@ __install_doc() {
 }
 
 __install_examples() {
-    for i in "simple-filter"; do
+    for i in "nuke-deadlinks" "simple-filter"; do
         __copy "examples/$i" "${docdir}/examples/$i"
     done
 }
@@ -120,8 +102,7 @@ case "$1" in
     all-but-doc)
         __remove_old
         __create_dirs
-        __install_bin
-        __install_lib
+        __install_datadir
         __install_tool
         ;;
     doc)

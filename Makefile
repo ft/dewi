@@ -34,4 +34,4 @@ test:
 	@[ -e "$(local_stamp)" ] || (printf 'test only valid with non-sys builds\n'; exit 1;)
 	(cd test && sh prepare_tests.sh && sh tests.sh;)
 
-.PHONY: all doc install install-doc sys test
+.PHONY: all doc install install-doc sys test uninstall
