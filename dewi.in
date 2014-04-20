@@ -1434,10 +1434,6 @@ sub cmpl_operations {
 
 # Utilities
 
-sub _copy_addons {
-    _copy_files_from_dir(q{addons});
-}
-
 sub _copy_dummy_dewi_file {
     DewiInternal::xcopy(q{.dewi/lib/Dewifile.stub},
                         q{.dewi});
@@ -1559,7 +1555,6 @@ sub init_root {
     die "dewi: Current directory is already a dewi-root (.dewi exists)!\n"
         if (is_dewi_root());
     DewiInternal::ensure_dir(q{.dewi});
-    _copy_addons();
     _copy_global_dewifile();
     _init_dummy_dewi_file();
 }
