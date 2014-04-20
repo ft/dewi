@@ -1337,6 +1337,7 @@ sub xrange {
 
 my %ops = (
     deploy => { cb => \&op_deploy,
+                args => sub { xge($_[0], 0) },
                 info => q{Deploy registered files} },
     completion => { cb => \&op_completion,
                     info => q{Query for suitable completion results},
@@ -1354,6 +1355,7 @@ my %ops = (
     version => { cb => \&op_version,
                  info => q{Show version information} },
     withdraw => { cb => \&op_withdraw,
+                  args => sub { xge($_[0], 0) },
                   info => q{Withdraw registered files} } );
 
 # Completion helpers dispatch table
@@ -1509,7 +1511,12 @@ sub dewi {
     if ($type eq q{root}) {
         DewiInternal::set_dewi_hash(q{fromroot});
         DewiFile::read_dewifile(Cwd::abs_path(q{.dewi/Dewifile}));
-        map { cd_and_lib_dewi($_, $op) } dewi_subdirs();
+        shift @ARGV;
+        if ($#ARGV >= 0) {
+            map { cd_and_lib_dewi($_, $op) } @ARGV;
+        } else {
+            map { cd_and_lib_dewi($_, $op) } dewi_subdirs();
+        }
     } else {
         # This is a bit of doubled work. However, to ensure %DEWI is always
         # set, it has to be done here (well, or I could rewrite the whole
