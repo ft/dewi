@@ -3,18 +3,17 @@ datadir = $(prefix)/share/dewi
 mandir = $(prefix)/share/man
 docdir = $(prefix)/share/doc/dewi
 
-bin_make = make
 bin_perl = perl
 bin_sh = /bin/sh
 
 local_stamp = local.stamp
 
 all:
-	@$(bin_sh) ./generate.sh sh="$(bin_sh)" perl="$(bin_perl)" make="$(bin_make)" here
+	@$(bin_sh) ./generate.sh sh="$(bin_sh)" perl="$(bin_perl)" here
 	@touch $(local_stamp)
 
 sys:
-	@$(bin_sh) ./generate.sh sh="$(bin_sh)" perl="$(bin_perl)" make="$(bin_make)" data=$(datadir) sys
+	@$(bin_sh) ./generate.sh sh="$(bin_sh)" perl="$(bin_perl)" data=$(datadir) sys
 	@rm -f $(local_stamp)
 
 install:

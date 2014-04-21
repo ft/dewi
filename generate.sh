@@ -51,7 +51,6 @@ resolv_path() {
 cli_version='2014-04-06#001'
 posix_sh_unres=sh
 perl_unres=perl
-make_unres=make
 data_unres=.
 
 mode=
@@ -70,9 +69,6 @@ while [ $# -gt 0 ]; do
             ;;
         perl=*)
             perl_unres=${1#perl=}
-            ;;
-        make=*)
-            make_unres=${1#make=}
             ;;
         data=*)
             data_unres=${1#data=}
@@ -105,8 +101,6 @@ got_perl_module() {
     perl -e 'eval {require '"$1"';}; if ($@) { exit 1; } else { exit 0;}'
 }
 
-make=$(find_binary "$make_unres")
-die_not_found "$?" make "$make_unres"
 posix_sh=$(find_binary "$posix_sh_unres")
 die_not_found "$?" posix_sh "$posix_sh_unres"
 perl=$(find_binary "$perl_unres")
@@ -141,7 +135,6 @@ This system does not appear to have the Template Perl module installed.
 fi
 
 printf '%s\n' "Configuration:"
-printf '  make:      %s\n' "$make"
 printf '  perl:      %s\n' "$perl"
 printf '  posix_sh:  %s\n' "$posix_sh"
 printf '  datadir:   %s\n' "$datadir"
@@ -160,10 +153,8 @@ printf '\n'
 __generate() {
     "$perl" -npe '
         s!\@\@DATADIR\@\@!'"$datadir"'!;
-        s!\@\@BIN_MAKE\@\@!'"$make"'!;
         s!\@\@PERL5\@\@!'"$perl"'!;
         s!\@\@POSIX_SH\@\@!'"$posix_sh"'!;
-        s!\@\@CLI_VERSION\@\@!'"$cli_version"'!;
     '
 }
 
