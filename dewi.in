@@ -1518,12 +1518,9 @@ sub dewi {
             map { cd_and_lib_dewi($_, $op) } dewi_subdirs();
         }
     } else {
-        # This is a bit of doubled work. However, to ensure %DEWI is always
-        # set, it has to be done here (well, or I could rewrite the whole
-        # involved code a bit; but - as always - laziness).
         DewiInternal::set_dewi_hash();
         DewiFile::read_dewifile(Cwd::abs_path(q{../.dewi/Dewifile}));
-        lib_dewi($op);
+        lib_dewi($op, { hashisset => 1 });
     }
 }
 
@@ -1585,14 +1582,16 @@ sub is_dewi_subdir {
 }
 
 sub lib_dewi {
-    my ($op) = @_;
+    my ($op, $params) = @_;
     my $cwd = Cwd::cwd();
     my @dirs = File::Spec->splitdir($cwd);
     my $base = $dirs[-1];
 
     DewiInternal::defaults();
     DewiInternal::clear_state();
-    DewiInternal::set_dewi_hash();
+    if (!defined $params->{hashisset} || $params->{hashisset} == 0) {
+        DewiInternal::set_dewi_hash();
+    }
     DewiFile::read_dewifile('Dewifile') or return 1;
     DewiInternal::post_process_req_files();
 
