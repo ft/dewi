@@ -1437,7 +1437,7 @@ sub cmpl_operations {
 # Utilities
 
 sub _copy_dummy_dewi_file {
-    DewiInternal::xcopy(q{.dewi/lib/Dewifile.stub},
+    DewiInternal::xcopy(q{.dewi/Dewifile.stub},
                         q{.dewi});
 }
 
