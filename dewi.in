@@ -1419,7 +1419,7 @@ sub op_init {
 
 sub op_version {
     print <<EOF
-dewi cli version $DewiInterbal::VERSION
+dewi cli version $DewiInternal::VERSION
 EOF
 ;
 }
