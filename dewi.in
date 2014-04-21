@@ -1462,15 +1462,28 @@ sub _init_dummy_dewi_file {
 
 # Here is a bit example code to get you started:
 #
-#set_opt('debug',   'true');
-#set_opt('dryrun',  'true');
-#set_opt('verbose', 'true');
+#set_opt 'debug',   'true';
+#set_opt 'dryrun',  'true';
+#set_opt 'verbose', 'true';
 #
-#register( { glob      => 'my_rc_file',
-#            method    => 'symlink',
-#            transform => \\\&makedotfile } );
+# The simplest form of deployment would be:
+#
+#register 'my_rc_file';
+#
+# That way "my_rc_file" is _copied_ to "~/.my_rc_file". If you instead want to
+# create a symlink, you will need to use the generic version of `register',
+# that takes exactly one hash-ref argument:
+#
+#register { glob      => 'my_rc_file',
+#           # Deploy things matched by "glob" using the "symlink" method:
+#           method    => 'symlink',
+#           # The generic version of `register' does not perform any
+#           # name transformation by default. You could supply an anonymous
+#           # function that does the trick here, but dewi provides a function
+#           # that does the deed and it's called `makedotfile':
+#           transform => \\\&makedotfile };
 
-dewifile_is_empty();
+dewifile_is_empty;
 EOF
 ;
     close $fh;
