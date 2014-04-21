@@ -1406,6 +1406,8 @@ sub op_init {
         # Init sub-dir below dewi-root
         return init_subdir($sd) if (defined $sd);
         die "dewi: `init' in dewi-root needs to specify sub-directory!\n";
+    } elsif (is_dewi_root(q{..}) && !is_dewi_subdir()) {
+        return init_subdir(q{.});
     } elsif (is_dewi_subdir()) {
         die "dewi: Naming a sub-directory is only valid"
             . " in a dewi-root directory!\n" if (defined $sd);
@@ -1437,12 +1439,21 @@ sub cmpl_operations {
 # Utilities
 
 sub _copy_dummy_dewi_file {
-    DewiInternal::xcopy(q{.dewi/Dewifile.stub},
-                        q{.dewi});
+    my ($path) = @_;
+    my ($dest);
+    my $src = q{.dewi/Dewifile.stub};
+
+    if ($path eq q{.}) {
+        $src = q{../} . $src;
+        $dest = q{Dewifile};
+    } else {
+        $dest = qq{$path/Dewifile};
+    }
+    DewiInternal::xcopy($src, $dest);
 }
 
 sub _init_dummy_dewi_file {
-    my $f = q{.dewi/Dewifile.sub};
+    my $f = q{.dewi/Dewifile.stub};
     open my $fh, q{>}, $f or die "Could not open `$f': $ERRNO\n";
     print {$fh} <<EOF
 #!@@PERL5@@
@@ -1567,7 +1578,7 @@ sub init_subdir {
     my ($path) = @_;
     die "dewi: Current directory already contains a Dewifile!\n"
         if (-f qq{$path/Dewifile});
-    _copy_dummy_dewi_file();
+    _copy_dummy_dewi_file($path);
 }
 
 sub is_dewi_root {
