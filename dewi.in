@@ -1310,9 +1310,6 @@ use Cwd;
 use File::Basename;
 use File::Copy;
 
-my $POSIX_SH = q{@@POSIX_SH@@};
-my $DATADIR = q{@@DATADIR@@};
-
 # Helpers for the operations dispatch table
 
 sub xeq {
@@ -1491,7 +1488,7 @@ EOF
 
 sub _copy_files_from_dir {
     my ($dir) = @_;
-    my $src = qq{$DATADIR/$dir};
+    my $src = q{@@DATADIR@@/$dir};
     DewiInternal::ensure_dir(qq{.dewi/$dir});
     return unless (-d $src);
     foreach my $file (_regular_files($src)) {
@@ -1500,7 +1497,7 @@ sub _copy_files_from_dir {
 }
 
 sub _copy_global_dewifile {
-    DewiInternal::xcopy(qq{$DATADIR/Dewifile}, q{.dewi});
+    DewiInternal::xcopy(q{@@DATADIR@@/Dewifile}, q{.dewi});
 }
 
 sub _regular_files {
