@@ -1,3 +1,4 @@
+set_opt 'verbose', 'true';
 sub header {
     print "# Add an awesome header\n";
 }

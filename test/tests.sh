@@ -1,5 +1,10 @@
 #!/bin/sh
 
+RT=$PWD/..
+dewi=$RT/dewi
+
+export dewi
+
 cd etc || exit 1
 
 if ! [ -z "$DEWI_TESTS" ]; then

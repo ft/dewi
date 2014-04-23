@@ -10,18 +10,15 @@ export HOME
 
 cd etc || exit 1
 
-if test -d .dewi; then
-    "$dewi" update || exit 1
-else
-    "$dewi" init || exit 1
-fi
-
-cp ../config.perl .dewi/config.perl || exit 1
+test -d .dewi && rm -Rf .dewi
+"$dewi" init || exit 1
+cp ../Dewifile .dewi/Dewifile || exit 1
 
 for i in */; do
     d=${i%/}
     d=${d##*/}
-    "$dewi" add "$d" || exit 1
+    rm -f ./"$d"/Dewifile
+    "$dewi" init "$d" || exit 1
 done
 
 for i in ../Dewifile.*; do
