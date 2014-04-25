@@ -82,8 +82,7 @@ Compatibility with previous versions.
     the main dewi script in ".dewi/bin" was another design mistake. Now
     all functionality is part of the `dewi' frontend script.
 
-    At this point in time the documentation does not reflect these
-    changes. But basically, what used to be:
+    Basically, what used to be:
 
         % make deploy
 
