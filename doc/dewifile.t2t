@@ -44,7 +44,15 @@ something. It runs some code. and looks like this:
 ```
 \
 As a bonus, you now know what scalar values like strings and numbers look
-like.
+like. You can even leave the parentheses off the call if you like:
+\
+```
+    thesubroutine "first argument", 'second', 3;
+```
+\
+People may argue against this variant in the realm of real Perl programs.
+But in Dewifiles, I perfer the paren-less syntax personally.
+
 
 : Hashrefs
 
