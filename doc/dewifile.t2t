@@ -1,6 +1,6 @@
 DEWIFILE
 
-Jul, 2012
+Apr, 2014
 
 %!target: man
 %!postproc(man): "^(\.TH.*) 1 "  "\1 5 "
@@ -76,11 +76,11 @@ more readable. Consider:
 ...and then this:
 \
 ```
-    register({ glob        => 'foo.conf',
+    register { glob        => 'foo.conf',
                destination => '~/.foo',
                method      => 'filtered',
                filtertype  => 'shell-inline',
-               filter      => 'sed -e "s,@VERSION@,0.2f,"' });
+               filter      => 'sed -e "s,@VERSION@,0.2f,"' };
 ```
 \
 You do not have to remember which argument goes where. The order is
@@ -128,12 +128,12 @@ To further visualize this, consider these examples:
        my ($originalfilename) = @_;
        return "." . $originalfilename;
     }
-    register({ glob      => 'gitconfig',
-               transform => \&my_make_dot_file });
+    register { glob      => 'gitconfig',
+               transform => \&my_make_dot_file };
     
     # The same can be done using an anonymous subroutine.
-    register({ glob      => 'gitconfig',
-               transform => sub { return "." . $_[0] } });
+    register { glob      => 'gitconfig',
+               transform => sub { return "." . $_[0] } };
 ```
 \
 Note, that dewi ships a subroutine for this particular problem (see the
@@ -315,13 +315,12 @@ for `//basedir//'. `//regex//' gets its default value.
 Example:
 \
 ```
-    register({ glob        => \&recursivefiles,
+    register { glob        => \&recursivefiles,
                globarg     => { basedir => 'snippets',
                                 regex   => '\.yasnippet$' },
                method      => 'copy',
                destination => \&recursive_dirname,
-               destarg     => '~/.emacs.d'
-               }});
+               destarg     => '~/.emacs.d' } };
 ```
 \
 See //"Predefined Destination Code"// above for details on
@@ -335,12 +334,11 @@ argument. If you need to use more than one, you can easily chain them
 like this:
 \
 ```
-    register({ glob        => 'zshrc.d/*',
+    register { glob        => 'zshrc.d/*',
                method      => 'copy',
                destination => '~/.zshrc.d',
                post_glob   => sub {
-                    return remove_hashes( remove_tilde(@_) );
-               }});
+                    return remove_hashes( remove_tilde(@_) ) } };
 ```
 
 : **remove_tilde**
@@ -375,10 +373,10 @@ only argument which gives detailed control over how **dewi** will behave.
 The hashref call basically looks like this:
 \
 ```
-    register({ key0        => 'value0',
+    register { key0        => 'value0',
                key1        => 'value1',
                ...
-               keyN        => "valueN"});
+               keyN        => "valueN" };
 ```
 
 Possible keys are:
@@ -451,9 +449,9 @@ inter-concatenation callback code (see //dewi(7)// for details).
 A full example could look like this:
 \
 ```
-    register({ glob        => 'zshrc',
+    register { glob        => 'zshrc',
                method      => 'symlink',
-               transform   => \&makedotfile});
+               transform   => \&makedotfile };
 ```
 
 == string argument ==
@@ -461,7 +459,7 @@ In **very** simple cases, you may only want to copy one file as a dotfile
 to the user's home directory. In such a case, you may do this:
 \
 ```
-    register('zshrc');
+    register 'zshrc';
 ```
 
 That will use default values for all previously described keys, except for
@@ -530,5 +528,5 @@ dewi(7), dewi(1)
 
 
 = COPYRIGHT =
-Copyright (c) 2010-2012 Frank Terbeck <ft@bewatermyfriend.org>, All rights
+Copyright (c) 2010-2014 Frank Terbeck <ft@bewatermyfriend.org>, All rights
 reserved. Terms for redistribution and use can be found in doc/LICENCE.
