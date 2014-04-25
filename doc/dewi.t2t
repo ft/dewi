@@ -1,41 +1,61 @@
 DEWI
 
-Jul, 2012
+Apr, 2014
 
 %!target: man
 
 
 = NAME =
-dewi - maintenance helper for dewi(7)
+
+dewi - Deploying and Withdrawing configuration files
 
 
 = DESCRIPTION =
+
 Dewi is a system for deploying personal configuration files from a central
-place to a user's home directory. The `dewi' command is a helper for eased
-maintenance of the system.
+place to a user's home directory. This manual is the reference documentation
+for the command line interface of the system. The system itself is
+documented in dewi(7).
+
+As a reminder: A directory containing a `**.dewi**' directory is the
+dewi-root directory. A directory of which the parent directory has contains
+such a `**.dewi**' directory is a dewi-sub-directory.
 
 
 = SUBCOMMANDS =
-: **add** //<SUB-DIRECTORIES>//
-Bootstrap one or more sub-directories. If there is only one parameter and
-that parameter is a dot ('**.**'), then all sub-directories will be
-bootstrapped.
-\
-Sub-directories that already have been boostrapped are skipped.
-Sub-directories that contain a `**Makefile**' but no `**Dewifile**' will
-be left untouched.
 
-: **init**
-Initialise a directory as a central dewi directory.
+: **deploy** //[SUB-DIRECTORIES]//
+When called in a dewi-sub-directory that contains a `**Dewifile**', that
+file is read and the registered files are deployed. When called in a
+dewi-root, the deployment operation will be carried out in all
+dewi-sub-directories containing a `**Dewifile**'.
 \
-This fails if called from a sub-directory of a dewi parent directory
-(ie, one parent directory contains a `//.dewi//' directory.
+In a dewi-root, you may also name a list of dewi-sub-directories that
+contain a `**Dewifile**' to run the deploy operation in all those named
+sub-directories.
+
+: **init** //[SUB-DIRECTORIES]//
+Initialise a directory for use with dewi.
+\
+When called without additional arguments: If called in a directory that is
+neither a dewi-root and nor a dewi-sub-directory, the directory in
+initialised as a dewi-root directory (i.e. a `**.dewi**' directory is
+created). If called in a dewi-sub-directory, an example `**Dewifile**' is
+created. If called in a dewi-root or in a dewi-sub-directory that already
+contains a `**Dewifile**', an error is signaled.
+\
+Using this operation with additional arguments is //only// valid in a
+dewi-root directory (other uses will end in an error). These additional
+arguments have to be names of dewi-sub-directories that do not yet contain a
+`**Dewifile**'. The operation then creates example Dewilfiles in each of the
+named sub-directories.
 
 : **foreach** //<COMMAND>//
-Run a command in every dewified subdirectory.
+Run a command in every dewified subdirectory. //COMMAND// may a multiple
+arguments, that will be joined into a single argument by spaces.
 \
-The //<COMMAND>// list ist actually passed to the shell's `**eval**'
-builtin, which means you can make use of shell variables, like `**$PWD**':
+The //COMMAND// is actually run by a POSIX shell, which means you can make
+use of shell variables, like `**$PWD**':
 \
 ```
   dewi foreach echo '$PWD'\; "echo \"bam  boo\""
@@ -49,13 +69,24 @@ rules. Be careful, when trying tricky stuff!):
   echo "bam  boo"
 ```
 
-: **update**
-Update the dewi system of a previously initialised directory.
-\
-If one parent directory of the current working directory contains
-a `//.dewi//' directory, then //dewi(1)// assumes you wanted to
-call `//update//' in that parent directory and calls this sub-command
-there.
+: **help**
+Prints a brief help message.
+
+: **version**
+Prints version information.
+
+: **withdraw** //[SUB-DIRECTORIES]//
+The different ways of using this operation work exactly as with the
+`**deploy**' operation, with the exception that instead of deploying files
+that were registered in the `**Dewifile**', they are //withdrawn//.
+
+
+There is one final operation, that is not very useful for direct use:
+
+: **completion** //<CONTEXT>//
+This operation produces a number of lines that describe useful completion
+candidates for a given //CONTEXT//. This operation may be used to implement
+completion helpers in interactive shells (like zsh).
 
 
 = SEE ALSO =
@@ -63,5 +94,5 @@ dewi(7), dewifile(5)
 
 
 = COPYRIGHT =
-Copyright (c) 2010-2012 Frank Terbeck <ft@bewatermyfriend.org>, All rights
+Copyright (c) 2010-2014 Frank Terbeck <ft@bewatermyfriend.org>, All rights
 reserved. Terms for redistribution and use can be found in doc/LICENCE.
