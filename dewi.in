@@ -1347,8 +1347,6 @@ my %ops = (
     init => { cb => \&op_init,
               info => q{Initialise .dewi directory or sub-directory},
               args => sub { xrange($_[0], 0, 1) } },
-    update => { cb => \&op_update,
-                info => q{Update .dewi directory} },
     version => { cb => \&op_version,
                  info => q{Show version information} },
     withdraw => { cb => \&op_withdraw,
