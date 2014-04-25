@@ -1,6 +1,6 @@
 DEWI
 
-Jul, 2012
+Apr, 2014
 
 %!target: man
 %!postproc(man): "^(\.TH.*) 1 "  "\1 7 "
@@ -14,7 +14,8 @@ dewi - personal configuration file deploy/withdraw tool
 People often keep their important configuration files in a central place,
 like `//~/etc//', where each sub-directory keeps the configuration files
 for one application (often kept in distributed version control, like
-//git//, //mercurial// or //bzr//).
+//git//, //mercurial// or //bzr// - even though //dewi// does not require
+you to use any sort of version control at all).
 
 So basically, the directories layout may look like this:
 \
@@ -42,21 +43,21 @@ The idea to to be able to do the following:
 \
 ```
     % cd ~/etc/zsh
-    % make deploy
+    % dewi deploy
 ```
 
 And have the zsh configuration files deployed to the user's home directory
-automatically. A complementary make target `//withdraw//' may be used to
-remove the previously deployed files from the home directory again.
+automatically. A complementary dewi operation called `//withdraw//' may be
+used to remove the previously deployed files from the home directory again.
 
-It should also be possible to do ```make deploy``` in `//~/etc//' to
+It should also be possible to do ```dewi deploy``` in `//~/etc//' to
 conveniently call the `//deploy//' target in all dewi-controlled
 sub-directories.
 
-In order to be able to do that, the dewi system must be made available in
-the central directory. //dewi//(1) is the system's maintenance tool, which
-is supposed to help the user to initialise and update the system's files
-easily.
+In order for that to happen, the dewi system keeps a little bit of
+information in the dewi-root directory. //dewi//(1) is the system's main
+tool, that is used to perform the different operations the systems
+provides.
 
 To initialise the system, you would do:
 \
@@ -65,16 +66,14 @@ To initialise the system, you would do:
     % dewi init
 ```
 
-That would add a `//.dewi//' sub-directory and a `//Makefile//', so now
-the directory layout would look like this:
+That would add a `//.dewi//' sub-directory to `//~/etc//', so now the
+directory layout would look like this:
 
 \
 ```
     +-+-(~/etc/)
       |
       +-----(.dewi/)
-      |
-      +-----(Makefile)
       |
       +-----(emacs/)
       |
@@ -90,15 +89,16 @@ the directory layout would look like this:
 ```
 
 Not all sub-directories need to be dewi-controlled. In fact, only
-directories, which contain a `//Dewifile//' and a `//Makefile//' are
-considered by the system.
+directories, which contain a `//Dewifile//' are considered to be part of
+the system.
 
-In order to create these files you need to "bootstrap" the subdirectory
-like this (the `//emacs//' sub-directory in this case):
+The `//dewi(1)//' tool can create an instructional example `**Dewifile**'
+for you, if you so please (by using the `//init//' operation in a
+dewi-subdirectory):
 \
 ```
-    % cd ~/etc
-    % dewi add emacs
+    % cd ~/etc/emacs
+    % dewi init
 ```
 The layout will look something like this now:
 \
@@ -107,13 +107,9 @@ The layout will look something like this now:
         |
         +-----(.dewi/)
         |
-        +-----(Makefile)
-        |
         +--+--(emacs/)
         |  |
-        |  +---------(Dewifile)
-        |  |
-        |  \---------(Makefile)
+        |  \---------(Dewifile)
         |       .
         |       .
         |       .
@@ -124,16 +120,29 @@ The layout will look something like this now:
 
 Now you need to fill the file `//~/etc/emacs/Dewifile//' with suitable
 content, and then you will be able to use the `//deploy//' and
-`//withdraw//' targets.
+`//withdraw//' operations.
 
-If you upgrade your copy of dewi and wish to update the .dewi directory
-and the systems Makefiles, you can use the //dewi//(1) tool again:
+To summarise, the system aims to empower the user to be able to deploy and
+withdraw their configuration file from some central place to their
+home-directory by using two simple operations, namely:
 \
 ```
-    % cd ~/etc
-    % dewi update
+    % dewi deploy
+    % dewi withdraw
 ```
 
+These operations are controlled by the contents of a Perl script file
+called `**Dewifile**'. The API for these files is documented in
+`//dewifile(5)//'. In case you are scared of Perl, that part of the manual
+contains a short "Emergency Perl" section. Unless you want to accomplish
+very fancy goals in your Dewifile, you do not have to know any Perl at all,
+that exceeds the level the few lines from that emergency section
+encompasses.
+
+Finally, take a look at the **EXAMPLES** section at the end of this manual
+to get a broad overview of how the system works. The rest of this manual
+and the //dewifile(5)// manual can be used as a reference for filling
+`**Dewifiles**'.
 
 = DEPLOYMENT METHODS =
 **dewi** is able to deploy configurations using different methods. The
@@ -206,12 +215,10 @@ with the other filtertypes, you can do that by sending a signal to the
 parent process:
 
 : **SIGHUP**
-When //dewi// receives this, it exists and returns a successful value
-(i.e. `**make**' will not be stopped).
+When //dewi// receives this, it exists and returns a successful value.
 
 : **SIGINT**
-When this signal is received, it exists and returns failure. This will also
-stop running `**make**' targets, like `//deploy//'.
+When this signal is received, it exists and returns failure.
 
 
 == Concatenated Deployment ==
@@ -287,7 +294,7 @@ An example for concatenated deployment is shown below:
       print "# Header for ~/.zshrc\n\n";
   }
   
-  register({ # Match a bunch of files to put into the destination file.
+  register { # Match a bunch of files to put into the destination file.
              glob        => 'zshrc.d/*',
              # Weed out some stuff, matched by `glob'.
              post_glob   => sub {
@@ -306,7 +313,7 @@ An example for concatenated deployment is shown below:
                  # `lastpost' uses inline shell code...
                  lastpost => 'echo;echo # Footer for ~/.zshrc',
                  # ...so its type must be set explicitly.
-                 lastposttype => 'shell-inline' }});
+                 lastposttype => 'shell-inline' }};
 ```
 
 
@@ -338,17 +345,17 @@ The actual kind depends on the hook type. See below.
 A very simple example looks like this:
 \
 ```
-    add_hook( { type  => 'shell-inline',
+    add_hook { type  => 'shell-inline',
                 event => 'pre-deploy',
                 code  =>
-        'echo "name: $DEWI_HOOK_EVENT, 1st arg: $DEWI_HOOK_ARG0"' ) };
+        'echo "name: $DEWI_HOOK_EVENT, 1st arg: $DEWI_HOOK_ARG0"' };
 ```
 
 
 == Hook-type: perl ==
 
-In this type, a Perl function is run for the given event. So, the //code//
-parameter to //add_hook()// needs to be a coderef.
+In this type, a Perl function is run for the given event. That means, the
+//code// parameter to //add_hook()// needs to be a coderef.
 
 The function is called with a number of arguments. The first argument is
 **always** the name of the event which caused the function to be run. The
@@ -408,79 +415,141 @@ Run right after a withdraw is done.
 Parameters: **0**: The package's name.
 
 
-= EXAMPLE =
-Let's assume, the configuration file directory is `//~/etc//' and we want
-to deploy our zsh configuration which is located in the `//zsh//'
-sub-directory.
+= EXAMPLES =
 
-First, put ~/etc into a dewi context:
+== Trivial Example ==
+
+Say, you got a configuration for a program, that is comprised of exactly
+one file that lives in your home-directory. This is quite a common case.
+You might have one file that contains your global //git// configuration:
+The `//gitconfig//' file. To register this file to be deployed to
+`//~/.gitconfig//' via copying, the corresponding Dewifile looks like this:
+\
+```
+    register 'gitconfig';
+    end;
+```
+
+Not scary at all.
+
+== Simple Example ==
+
+Now, say you got this file "init.el" that you want to copy to
+`//~/.emacs.d/init.el//'. This doesn't map to the trivial version of the
+`//register//' function and you have to use its general calling convention.
+In its general calling convention, the function takes a hash-ref argument.
+Sounds scary, but isn't. The call just looks like this:
+\
+```
+    register { foo => 1,
+               bar => 23,
+               bar => 'fred' };
+```
+
+That's just key-value pairs in curly-brackets. The actual Dewifile for the
+task at hand could look like this:
+\
+```
+    register { glob => 'init.el',
+               destination => '~/.emacs.d' };
+    end;
+```
+
+Simple enough. To extend this example a bit, say you want to deploy the
+file as a symlink to its source instead of as a copy, you'd do this:
+\
+```
+    register { glob => 'init.el',
+               destination => '~/.emacs.d',
+               method => 'symlink' };
+    end;
+```
+
+
+== More Complex Example ==
+
+For the more complex example, let's assume that the configuration file
+directory is `//~/etc//' and we want to deploy our zsh configuration which
+is located in the `//zsh//' sub-directory of that root directory.
+
+If `//~/etc//' is not a dewi-root directory, yet, this would do the trick:
 \
 ```
     % cd ~/etc
     % dewi init
 ```
 
-Say you got your zsh configuration in ~/etc/zsh. To bootstrap that
-directory for dewi to (from ~/etc):
+If your zsh configuration lives in ~/etc/zsh, to add an example Dewifile to
+that sub-directory, you'd do this (from ~/etc):
 \
 ```
-    % dewi add zsh
+    % dewi init zsh
 ```
 
-Say, ~/etc/zsh's layout looks like this:
+This will give you an example `**Dewifile**'. If you know what to put into
+the file already, this step is entirely optional.
+
+Now say, that the layout of //~/etc/zsh// looks like this:
 
 : **~/etc/zsh/zshrc.d/*.z**
-Sub configuration files
+Sub configuration files, that should end up in //~/.zshrc.d//.
 
 : **~/etc/zsh/zshrc**
-The main configuration file, which loads the others.
+The main configuration file (that should end up as //~/.zshrc//), which
+loads the others from //~/.zshrc.d//.
 
 
-The corresponding Dewifile:
+Let's look at a verbose version of a possible `**Dewifile**' that would get
+the deed done:
 \
 ```
-    register({ glob        => 'zshrc',
+    register { glob        => 'zshrc',
                method      => 'copy',
                destination => '~/',
-               transform   => sub { return '.' . $_[0]; }});
-    register({ glob        => 'zshrc.d/*.z',
+               transform   => sub { return '.' . $_[0]; }};
+    register { glob        => 'zshrc.d/*.z',
                method      => 'copy',
                destination => '~/.zshrc.d',
-               transform   => sub { return $_[0]; }});
+               transform   => sub { return $_[0]; }};
 ```
 
-Some parts are optinal. Actually, all except for "glob" are optional.
-You could even just pass a scalar to `register', in which case that
-value is used as the `glob' part. So, if you'd have a file
-`~/etc/zsh/zshrc' and only wanted to deploy that, you'd do:
+Okay, this looks a bit scary. So let's see if dewi let's us express things
+in simpler ways. Some parts are optinal. Actually, all except for "glob"
+are optional. As we've seen before in the trivial example above, the first
+`//register//' call could even be expressed by just passing a scalar to
+`//register//', in which case that value is used as the `glob' part, and
+the dotfile name-transformation happens implicitly. If you'd have a file
+`//~/etc/zsh/zshrc//' and only wanted to deploy that, you'd do:
 \
 ```
-    register('zshrc');
+    register 'zshrc';
 ```
 
-That means deploy the file `zshrc' with default values for all other
-parameters, except for `//transform//' which will be set to a reference
-to `//makedotfile//'. That way the above line would deploy the file as
-`//~/.zshrc//'.
+If you take a look at the reference documentation of the //register//
+function in the //dewifile(5)// manual, that tells the function to deploy
+the file `zshrc' with default values for all of //register//'s other
+parameters, except for `//transform//' which will be set to a reference to
+the `//makedotfile//' function (because the default //transfer// function
+does not change its input; it's the identity function).
 
-If the `glob' parameter is a coderef, you can have absolute control
-over how filename generation is done. The coderef is expected to
-return a array of file names.
+Once again, that way the above line would deploy the file as
+`//~/.zshrc//'.
 
 With all that knowledge, the previous example can be boiled down to
 this:
 \
 ```
-    register('zshrc');
-    register({ glob        => 'zshrc.d/*.z',
-               destination => '~/.zshrc.d', });
+    register 'zshrc';
+    register { glob        => 'zshrc.d/*.z',
+               destination => '~/.zshrc.d', };
+    end;
 ```
 
 Easy enough.
 
-Now suppose, you got a few files named `z*' instead of just `zshrc',
-like `zlogout', `zprofile', `zshenv' and `zshrc'. So, your layout
-not looks like this:
+Now suppose, you got a few files named `z*' instead of just `zshrc', like
+`zlogout', `zprofile', `zshenv' and `zshrc'. Your layout not looks like
+this:
 
 : **~/etc/zsh/zshrc.d/*.z**
 Sub configuration files
@@ -493,46 +562,58 @@ And another
 : **~/etc/zsh/zlogout**
 And a final one
 
-The problem here is that you cannot just glob for `z*' because that
-would match `zshrc.d', too, which is a directory.
 
-The trick is to use a coderef to do some filtering. When you use
-a coderef, you can use the `globarg' parameter to hand an argument
-to the coderef.
+The problem here is that you cannot just glob for `z*' because that would
+match `zshrc.d', too, which is a directory. You could list all those files
+one by one, but then what happens when you add another one, like
+//zlogin//? Would be good if there was more control to globbing.
+
+To tackle the problem, the `glob' parameter to `//register//' may be a
+coderef, which grants absolute control over how filename generation is
+done. The coderef is expected to return a array of file names.
+
+When you use a coderef, you can use the `globarg' parameter to hand an
+argument to the coderef. Let's implement a function that matches only
+regular files that match its only argument and use that with
+`//register//':
 \
 ```
     sub glob_just_files {
         my ($glob) = @_;
         return grep { -f } bsd_glob($glob);
     }
-    register({ glob        => \&glob_just_files,
+    register { glob        => \&glob_just_files,
                globarg     => 'z*',
-               transform   => \&makedotfile});
-    register({ glob        => 'zshrc.d/*.z',
-               destination => '~/.zshrc.d', });
+               transform   => \&makedotfile };
+    register { glob        => 'zshrc.d/*.z',
+               destination => '~/.zshrc.d' };
+    end;
 ```
 
-
-For convenience, dewi defines some coderefs for you. Well, currently
-only one:
+And that works. Because that seems like a common task, //dewi// provides a
+function that does exactly what our custom function does:
 
 : **regularfiles**
 Like the default glob, but only match regular files. Expects `globarg'
 to be a string scalar which holds the desired glob. Like "*.txt".
 
+
 With that you can now do this:
 \
 ```
-    register({ glob        => \&regularfiles,
+    register { glob        => \&regularfiles,
                globarg     => 'z*',
-               transform   => \&makedotfile});
-    register({ glob        => 'zshrc.d/*.z',
-               destination => '~/.zshrc.d', });
+               transform   => \&makedotfile };
+    register { glob        => 'zshrc.d/*.z',
+               destination => '~/.zshrc.d' };
+    end;
 ```
 
-
-For more details and documentation of the full `//Dewifile//' API, see
-the dewifile(5) manual page.
+These three examples should give you a general idea of how to write a
+`**Dewifile**' in order to get "make deploy" and "make withdraw" to work.
+Much more is possible, if you are willing to dive deeper into the reference
+documentation that describes all details of the full `//Dewifile//' API.
+For that see the dewifile(5) manual page.
 
 
 = SEE ALSO =
@@ -540,5 +621,5 @@ dewi(1), dewifile(5)
 
 
 = COPYRIGHT =
-Copyright (c) 2010-2012 Frank Terbeck <ft@bewatermyfriend.org>, All rights
+Copyright (c) 2010-2014 Frank Terbeck <ft@bewatermyfriend.org>, All rights
 reserved. Terms for redistribution and use can be found in doc/LICENCE.
