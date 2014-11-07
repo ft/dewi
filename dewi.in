@@ -1341,7 +1341,7 @@ my %ops = (
                     args => sub { xeq($_[0], 1) } },
     foreach => { cb => \&op_foreach,
                  info => q{Run command in dewi-fied sub-directories},
-                 args => sub { xge($_[0], 1) } },
+                 args => sub { xge($_[0], 0) } },
     help => { cb => \&op_help,
               info => q{Show this help text} },
     init => { cb => \&op_init,
@@ -1377,7 +1377,18 @@ sub op_deploy {
 
 sub op_foreach {
     shift @ARGV;
-    map { dewi_foreach($_) } dewi_subdirs();
+    if (! -t STDIN) {
+        DewiInternal::debug("stdin not connected to a terminal.\n");
+        DewiInternal::debug("Reading script from stdin therefore.\n");
+        DewiInternal::debug("Ignoring any other arguments.\n");
+        my @script = ();
+        while (my $line = <STDIN>) {
+            push @script, $line;
+        }
+        map { dewi_foreach($_, \@script) } dewi_subdirs();
+    } else {
+        map { dewi_foreach($_) } dewi_subdirs();
+    }
 }
 
 sub op_help {
@@ -1544,9 +1555,19 @@ sub dewi {
 }
 
 sub dewi_foreach {
-    my ($subdir) = @_;
-    my $code = join q{ }, @ARGV;
-    cd_and_do($subdir, sub { system(q{@@POSIX_SH@@}, q{-c}, $code); });
+    my ($subdir, $script) = @_;
+    if (defined $script) {
+        cd_and_do($subdir,
+                  sub { open(my $fh, q{|-}, q{@@POSIX_SH@@})
+                            or die "Couldn't fork a shell: $ERRNO\n";
+                        foreach my $line (@{ $script }) {
+                            print {$fh} $line;
+                        }
+                        close($fh)});
+    } else {
+        my $code = join q{ }, @ARGV;
+        cd_and_do($subdir, sub { system(q{@@POSIX_SH@@}, q{-c}, $code); });
+    }
 }
 
 sub dewi_subdirs {

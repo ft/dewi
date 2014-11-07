@@ -50,7 +50,7 @@ arguments have to be names of dewi-sub-directories that do not yet contain a
 `**Dewifile**'. The operation then creates example Dewilfiles in each of the
 named sub-directories.
 
-: **foreach** //<COMMAND>//
+: **foreach** //<COMMAND>// (deprecated)
 Run a command in every dewified subdirectory. //COMMAND// may a multiple
 arguments, that will be joined into a single argument by spaces.
 \
@@ -66,8 +66,32 @@ rules. Be careful, when trying tricky stuff!):
 \
 ```
   echo $PWD
-  echo "bam  boo"
+  echo "bam     boo"
 ```
+\
+Due to the trickiness of nested shell quoting, this way of the //foreach//
+sub-command is deprecated, though it will remain supported until further
+notice, since it still could be useful for the simplest of command executions.
+
+: **foreach**
+The //foreach// sub-command supports reading scripts from //stdin//. Any
+additional command like arguments to the sub-command will be ignored. Here is
+an example:
+\
+```
+  dewi foreach << EOF
+  echo $PWD
+  echo \$PWD
+  echo "bam  boo"
+  EOF
+```
+\
+This is much more straight forward. The only aspect, that needs to be
+considered is that the shell supports expansions in the body of here-documents.
+Thus, in the example above, //"$PWD"// will be replaced by the contents of the
+parameter (the directory in which the command was issued) and //"\$PWD"// gets
+parsed and expanded by a shell that is called in each dewi-fied subdirectory
+(therefore being expanded to the path-name of each of those subdirectories).
 
 : **help**
 Prints a brief help message.
