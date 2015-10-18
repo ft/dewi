@@ -227,7 +227,7 @@ sub find_cmd {
         push @{ $path }, @{ $args->{more} };
     }
     foreach my $e (@{ $path }) {
-        my $rc = "$e/$cmd";
+        my $rc = DewiInternal::expand_dir($e) . "/$cmd";
         return $rc if (-f $rc);
     }
     return $args->{fallback} if (defined $args->{fallback});
