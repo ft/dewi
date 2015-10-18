@@ -214,6 +214,26 @@ sub expand_path {
     DewiInternal::expand_dir(@_);
 }
 
+# Miscellaneous helpers
+sub find_cmd {
+    my ($cmd, $args) = @_;
+    my $path;
+    if (defined $args->{path}) {
+        $path = $args->{path};
+    } else {
+        $path = [ split /:/, $ENV{PATH} ];
+    }
+    if (defined $args->{more}) {
+        push @{ $path }, @{ $args->{more} };
+    }
+    foreach my $e (@{ $path }) {
+        my $rc = "$e/$cmd";
+        return $rc if (-f $rc);
+    }
+    return $args->{fallback} if (defined $args->{fallback});
+    return;
+}
+
 # The `register()' subroutine
 sub __register_defaults {
     # This sets default values for the different meaningful keys and
