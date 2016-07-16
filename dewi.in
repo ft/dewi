@@ -216,7 +216,7 @@ use File::Spec;
 use File::Basename;
 
 my $reg_calls = 0;
-our (%DEWI, $local_options, $user_settings);
+our (%DEWI, $local_options, $user_settings, $local_hooks);
 
 # output
 sub verbose {
@@ -735,7 +735,11 @@ $options->set(q{verbose}, q{no});
 # entirely for the user to control. Dewi will never do near it internally.
 our $user_settings = Dewi::Storage::Options->new();
 
-our (%hooks, @regfiles);
+# Just like options and user-settings, hooks get global and per-package
+# storages as implemented by the class we're instantiating right here:
+our $hooks = Dewi::Storage::Hooks->new();
+
+our @regfiles;
 
 my %methods = (
     copy       => \&method_copy,
@@ -766,7 +770,6 @@ sub dewi_got_feature {
 
 sub clear_state {
     @regfiles = ( );
-    %hooks = ( );
 }
 
 # Option helpers, use the settings from DewiFile if they are defined.
@@ -1441,7 +1444,12 @@ sub withdraw_files {
 sub register_hook {
     my ($event, $hr) = @_;
 
-    push @{ $hooks{$event} }, $hr;
+    my $l = $DewiFile::local_hooks;
+    if (defined $l) {
+        $l->push($event, $hr);
+    } else {
+        $hooks->push($event, $hr);
+    }
     return 1;
 }
 
@@ -1483,11 +1491,12 @@ sub run_hook {
     # behaves similarly.
     my ($event, @args) = @_;
 
-    if (!defined $hooks{$event} || scalar @{ $hooks{$event} } == 0) {
-        return 0;
-    }
+    my $l = $DewiFile::local_hooks;
+    my $hr = (defined $l) ? $l : $hooks;
+    my $list = $hr->get($event);
+    return 0 if (!defined $list || scalar @{ $list } == 0);
 
-    foreach my $h (@{ $hooks{$event} }) {
+    foreach my $h (@{ $list }) {
         if ($h->{type} eq 'perl') {
             $h->{code}->($event, @args);
         } elsif ($h->{type} eq 'shell-file') {
@@ -1899,6 +1908,8 @@ sub lib_dewi {
     $DewiFile::local_options->set_fallback($DewiInternal::options);
     $DewiFile::user_settings = Dewi::Storage::Options->new();
     $DewiFile::user_settings->set_fallback($DewiInternal::user_settings);
+    $DewiFile::local_hooks = Dewi::Storage::Hooks->new();
+    $DewiFile::local_hooks->set_fallback($DewiInternal::hooks);
     DewiFile::read_dewifile('Dewifile') or return 1;
     DewiInternal::post_process_req_files();
 
