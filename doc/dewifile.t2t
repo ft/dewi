@@ -1,6 +1,6 @@
 DEWIFILE
 
-Apr, 2014
+Jul, 2016
 
 %!target: man
 %!postproc(man): "^(\.TH.*) 1 "  "\1 5 "
@@ -536,5 +536,5 @@ dewi(7), dewi(1)
 
 
 = COPYRIGHT =
-Copyright (c) 2010-2014 Frank Terbeck <ft@bewatermyfriend.org>, All rights
+Copyright (c) 2010-2016 Frank Terbeck <ft@bewatermyfriend.org>, All rights
 reserved. Terms for redistribution and use can be found in doc/LICENCE.
