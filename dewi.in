@@ -39,6 +39,79 @@ sub set_fallback {
     $self->{fallback} = $fb;
 }
 
+package Dewi::Storage::Options;
+use parent -norequire, "Dewi::Storage::WithFallback";
+
+# This is a fairly simple key/value store with support for getting data from
+# other Dewi::Storage::WithFallback storages. This one also has support for
+# interpreting values as boolean data when retrieving data from the storage.
+#
+# This data structure is used for implementing options and user options, of
+# which there are global and package-local variants of both.
+
+# This class uses $self->{data} as its internal storage. It is a hash ref to
+# arbitrary types of values.
+
+sub setopt {
+    my ($self, $key, $value) = @_;
+    $self->{data}->{$key} = $value;
+    return $value;
+}
+
+sub getopt {
+    my ($self, $key) = @_;
+    return $self->{data}->{$key};
+}
+
+# The following three sub-routines implement the interpretation of Perl scalar
+# values as boolean values.
+
+sub is_bool_false {
+    my ($value) = @_;
+
+    return 1 if (!defined $value
+                 || $value eq 'no'
+                 || $value eq 'no_thanks'
+                 || $value eq 'off'
+                 || $value eq 'false'
+                 || $value eq '0');
+    return 0;
+}
+
+sub is_bool_true {
+    my ($value) = @_;
+
+    return 0 if (!defined $value);
+    return 1 if ($value eq 'yes'
+                 || $value eq 'yes_please'
+                 || $value eq 'on'
+                 || $value eq 'true'
+                 || $value eq '1');
+    return 0;
+}
+
+sub getopt_bool {
+    my ($self, $key) = @_;
+    my $value;
+
+    $value = $self->get($key);
+    return 0 if (is_bool_false($value));
+    return 1 if (is_bool_true($value));
+
+    warn "Unknown value for boolean option \"$key\" ($value).";
+    warn " Assuming false.\n";
+    return 0;
+}
+
+sub new {
+    my ($class, $data) = @_;
+    my $self = $class->SUPER::new($data);
+    $self->{data} = {};
+    $self->{getter} = \&getopt;
+    $self->{setter} = \&setopt;
+    return $self;
+}
+
 package DewiFile;
 
 use strict;
