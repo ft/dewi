@@ -216,24 +216,7 @@ use File::Spec;
 use File::Basename;
 
 my $reg_calls = 0;
-our (%DEWI);
-
-# user definable settings
-my (%user_settings);
-sub user_set {
-    my ($key, $val) = @_;
-    $user_settings{$key} = $val;
-}
-
-sub user_get {
-    my ($key) = @_;
-    return $user_settings{$key};
-}
-
-sub user_get_bool {
-    my ($key) = @_;
-    return DewiInternal::__get_opt_bool(\&user_get, $key);
-}
+our (%DEWI, $local_options, $user_settings);
 
 # output
 sub verbose {
@@ -248,20 +231,34 @@ sub debug {
 
 # option handling
 sub set_opt {
-    my ($key, $val) = @_;
-
-    DewiInternal::set_opt($key, $val);
-    print "rc.perl: Set option '$key' to \"$val\"\n"
-        if (DewiInternal::get_opt_bool('debug'));
-    return 1;
+    my ($key, $value) = @_;
+    return DewiInternal::set_opt($key, $value);
 }
 
 sub get_opt {
-    return DewiInternal::get_opt(@_);
+    my ($key) = @_;
+    return DewiInternal::get_opt($key);
 }
 
 sub get_opt_bool {
-    return DewiInternal::get_opt_bool(@_);
+    my ($key) = @_;
+    return DewiInternal::get_opt_bool($key);
+}
+
+# user definable settings
+sub user_set {
+    my ($key, $value) = @_;
+    return DewiInternal::user_set($key, $value);
+}
+
+sub user_get {
+    my ($key) = @_;
+    return DewiInternal::user_get($key);
+}
+
+sub user_get_bool {
+    my ($key) = @_;
+    return DewiInternal::user_get_bool($key);
 }
 
 # helpers
@@ -726,7 +723,18 @@ our $MINOR_VERSION = 2;
 our $SUFFIX_VERSION = '+git';
 our $VERSION = $MAJOR_VERSION . '.' . $MINOR_VERSION . $SUFFIX_VERSION;
 
-my (%opts);
+# Default set of options. This will be the fallback storage for per-package
+# option sets as well.
+our $options = Dewi::Storage::Options->new();
+$options->set(q{filter_always}, q{no});
+$options->set(q{debug}, q{no});
+$options->set(q{dryrun}, q{no});
+$options->set(q{verbose}, q{no});
+
+# The user-settings work exactly like $options do. But the namespace it
+# entirely for the user to control. Dewi will never do near it internally.
+our $user_settings = Dewi::Storage::Options->new();
+
 our (%hooks, @regfiles);
 
 my %methods = (
@@ -761,6 +769,100 @@ sub clear_state {
     %hooks = ( );
 }
 
+# Option helpers, use the settings from DewiFile if they are defined.
+
+sub __set_opt {
+    my ($global, $local, $desc, $key, $value) = @_;
+    my $debug = __get_opt_bool($options, $DewiFile::local_options, q{option}, q{debug});
+    my ($rc, $lg);
+
+    if (defined $local) {
+        $rc = $local->set($key, $value);
+        $lg = q{local};
+    } else {
+        $rc = $global->set($key, $value);
+        $lg = q{global};
+    }
+    print qq{set_opt(): Setting $lg $desc $key to $value\n} if ($debug);
+    return $rc;
+}
+
+sub __get_opt {
+    my ($global, $local, $desc, $key) = @_;
+    my $debug = __get_opt_bool($options, $DewiFile::local_options, q{option}, q{debug});
+    my ($rc, $lg);
+
+    if (defined $local) {
+        $rc = $local->get($key);
+        $debug = $local->getopt_bool(q{debug});
+        $lg = q{local};
+    } else {
+        $rc = $global->get($key);
+        $debug = $global->getopt_bool(q{debug});
+        $lg = q{global};
+    }
+    print qq{get_opt(): Getting value for $lg $desc $key: $rc\n} if ($debug);
+    return $rc;
+}
+
+sub __get_opt_bool {
+    my ($global, $local, $desc, $key) = @_;
+    my ($rc, $lg);
+
+    if ($global == $options &&
+        (!defined $local || $local == $DewiFile::local_options) &&
+        $key eq q{debug})
+    {
+        return $local->getopt_bool($key) if (defined $local);
+        return $global->getopt_bool($key);
+    }
+
+    my $debug = __get_opt_bool($options, $DewiFile::local_options, q{option}, q{debug});
+    if (defined $local) {
+        $rc = $local->getopt_bool($key);
+        $lg = q{local};
+    } else {
+        $rc = $global->getopt_bool($key);
+        $lg = q{global};
+    }
+    print qq{get_opt_bool(): Getting boolean value for $lg $desc $key: }
+        . ($rc ? q{true} : q{false}) . qq{\n} if ($debug);
+    return $rc;
+}
+
+sub set_opt {
+    my ($key, $value) = @_;
+    return __set_opt($options, $DewiFile::local_options, q{option}, $key, $value);
+}
+
+sub get_opt {
+    my ($key) = @_;
+    return __get_opt($options, $DewiFile::local_options, q{option}, $key);
+}
+
+sub get_opt_bool {
+    my ($key) = @_;
+    return __get_opt_bool($options, $DewiFile::local_options, q{option}, $key);
+}
+
+sub user_set {
+    my ($key, $value) = @_;
+    return __set_opt($user_settings, $DewiFile::user_settings, q{user setting},
+                     $key, $value);
+}
+
+sub user_get {
+    my ($key) = @_;
+    return __get_opt($user_settings, $DewiFile::user_settings, q{user setting},
+                     $key);
+}
+
+sub user_get_bool {
+    my ($key) = @_;
+    return __get_opt_bool($user_settings, $DewiFile::user_settings,
+                          q{user setting}, $key);
+}
+
 # output
 sub verbose {
     print @_ if (get_opt_bool('verbose') || get_opt_bool('debug'));
@@ -770,65 +872,6 @@ sub verbose {
 sub debug {
     print @_ if (get_opt_bool('debug'));
     return 1;
-}
-
-# option handling
-sub defaults {
-    set_opt('filter_always', 'no');
-    set_opt('debug',         'no');
-    set_opt('dryrun',        'no');
-    set_opt('verbose',       'no');
-}
-
-sub get_opt {
-    my ($key) = @_;
-    return $opts{$key};
-}
-
-sub __is_bool_false {
-    my ($v) = @_;
-
-    return 1 if (!defined $v
-                 || $v eq 'no'
-                 || $v eq 'no_thanks'
-                 || $v eq 'off'
-                 || $v eq 'false'
-                 || $v eq '0');
-    return 0;
-}
-
-sub __is_bool_true {
-    my ($v) = @_;
-
-    return 0 if (!defined $v);
-    return 1 if ($v eq 'yes'
-                 || $v eq 'yes_please'
-                 || $v eq 'on'
-                 || $v eq 'true'
-                 || $v eq '1');
-    return 0;
-}
-
-sub __get_opt_bool {
-    my ($go, $key) = @_;
-    my ($v);
-
-    $v = $go->($key);
-    return 0 if (__is_bool_false($v));
-    return 1 if (__is_bool_true($v));
-
-    warn "Unknown value for boolean option \"$key\" ($v). Assuming false.\n";
-    return 0;
-}
-
-sub get_opt_bool {
-    my ($key) = @_;
-    return __get_opt_bool(\&get_opt, $key);
-}
-
-sub set_opt {
-    my ($key, $val) = @_;
-    $opts{$key} = $val;
 }
 
 # setup the DEWI hash
@@ -1848,11 +1891,14 @@ sub lib_dewi {
     my @dirs = File::Spec->splitdir($cwd);
     my $base = $dirs[-1];
 
-    DewiInternal::defaults();
     DewiInternal::clear_state();
     if (!defined $params->{hashisset} || $params->{hashisset} == 0) {
         DewiInternal::set_dewi_hash();
     }
+    $DewiFile::local_options = Dewi::Storage::Options->new();
+    $DewiFile::local_options->set_fallback($DewiInternal::options);
+    $DewiFile::user_settings = Dewi::Storage::Options->new();
+    $DewiFile::user_settings->set_fallback($DewiInternal::user_settings);
     DewiFile::read_dewifile('Dewifile') or return 1;
     DewiInternal::post_process_req_files();
 
@@ -1866,6 +1912,8 @@ sub lib_dewi {
     } else {
         die "dewi: BUG: Unknown operation `$op'!\n";
     }
+    $DewiFile::local_options = undef;
+    $DewiFile::user_settings = undef;
 }
 
 sub parent_dir_is_dewi_root {
@@ -1888,10 +1936,6 @@ sub subdir_guard {
     die "dewi: $op is only valid in a dewi sub-directory!\n"
         unless (is_dewi_subdir());
 }
-
-# Environment
-
-DewiInternal::defaults();
 
 # signals
 $SIG{INT} = sub {
