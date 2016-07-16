@@ -4,6 +4,41 @@
 # Frank Terbeck <ft@bewatermyfriend.org>, All rights reserved.
 # Terms for redistribution and use can be found in `LICENCE'.
 
+package Dewi::Storage::WithFallback;
+
+# Basic key/value storage with fallback support.
+
+sub new {
+    my ($class, $self) = @_;
+    $self = {} unless (defined $self);
+    bless $self, $class;
+    return $self;
+}
+
+# Gets a $key from the internal storage. If it is not defined in this
+# instance's internal storage, try the fallback instance instead. Returns undef
+# in case no defined value could be found for the $key in any of the queried
+# instances.
+sub get {
+    my ($self, $key) = @_;
+    my $result = $self->{getter}->($self, $key);
+    return $result if (defined $result);
+    return if (not defined $self->{fallback});
+    return $self->{fallback}->{getter}->($self->{fallback}, $key);
+}
+
+# Set a $key to a $value in an instances internal data store.
+sub set {
+    my ($self, $key, $value) = @_;
+    return $self->{setter}->($self, $key, $value);
+}
+
+# Set the fallback instance to another WithFallback class instance.
+sub set_fallback {
+    my ($self, $fb) = @_;
+    $self->{fallback} = $fb;
+}
+
 package DewiFile;
 
 use strict;
