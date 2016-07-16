@@ -112,6 +112,99 @@ sub new {
     return $self;
 }
 
+package Dewi::Storage::Hooks;
+use parent -norequire, "Dewi::Storage::WithFallback";
+
+# This is a second kind of key-value store. But instead of accepting arbitrary
+# Perl data as values, it maintains a list of code refs, to be used as hooks.
+# The key to the list of values is the name of the hook to be run. This is
+# obviously used for implementing hooks in dewi. It has methods like push,
+# add, remove_first, remove_last and remove_all to manipulate the list of
+# hooks. There are also get and set methods that modify the list of hooks
+# directly.
+#
+# As with options, hooks have global and package-local variants, where the
+# package-local variant overrides the list from the global variant.
+
+# Push a new hook to the end of the current list.
+
+sub push {
+    my ($self, $key, $value) = @_;
+    my $list = $self->safe_gethooks($key);
+    push @{ $list }, $value;
+    $self->sethooks($key, $list);
+    return $list;
+}
+
+# Add a new hook to the start of the current list.
+
+sub add {
+    my ($self, $key, $value) = @_;
+    my $list = $self->safe_gethooks($key);
+    unshift @{ $list }, $value;
+    $self->sethooks($key, $list);
+    return $list;
+}
+
+# Get a list of hooks, possibly from fallback instances. If none were found,
+# return an empty array ref.
+
+sub safe_gethooks {
+    my ($self, $key) = @_;
+    my $list = $self->get($key);
+    return $list if (defined $list);
+    return [];
+}
+
+# Set the data-set for a $key to an empty array ref. If $key is not specified,
+# clear the data-sets of *all* keys of *THIS* instance. This method does not
+# decent into fallback instances.
+
+sub clear {
+    my ($self, $key) = @_;
+    if (defined $key) {
+        $self->sethooks($key, []);
+        return $self->{data}->{$key};
+    }
+    foreach my $name (keys %{ $self->{data} }) {
+        $self->clear($name);
+    }
+    return $self->{data};
+}
+
+# Entirely delete the data-set for $key. If $key is not specified, the entire
+# internal storage of *THIS* instance is set to an empty hash ref.
+
+sub delete {
+    my ($self, $key) = @_;
+    if (defined $key) {
+        delete $self->{data}->{$key};
+    } else {
+        $self->{data} = {};
+    }
+    return $self->{data};
+}
+
+sub gethooks {
+    my ($self, $key) = @_;
+    return $self->{data}->{$key};
+}
+
+sub sethooks {
+    my ($self, $key, $value) = @_;
+    $self->{data}->{$key} = $value;
+    return $value;
+}
+
+sub new {
+    my ($class, $data) = @_;
+    my $self = $class->SUPER::new($data);
+    $self->{data} = undef;
+    $self->{getter} = \&gethooks;
+    $self->{setter} = \&sethooks;
+    return $self;
+}
+
 package DewiFile;
 
 use strict;
