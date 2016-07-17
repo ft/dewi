@@ -438,6 +438,23 @@ The `//gitconfig//' file. To register this file to be deployed to
 
 Not scary at all.
 
+
+== The Return of the Trivial Example ==
+
+The trivial call to the //register// function deploys via copying. Oftentimes,
+however, one might like to deploy files using symlinks. The trivial call takes
+a number of arguments, that make things like that possible:
+\
+```
+    register '--symlink', 'gitconfig';
+    end;
+```
+
+Again, not too bad. Another option `**--no-dot**', tells the trivial
+//register// call style **not** to produce dotfiles, but leave the source file
+name untouched.
+
+
 == Simple Example ==
 
 Now, say you got this file "init.el" that you want to copy to

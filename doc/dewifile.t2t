@@ -528,7 +528,17 @@ to the user's home directory. In such a case, you may do this:
 That will use default values for all previously described keys, except for
 `//transform//' which will be set to `//\&makedotfile//'. So, the above
 register call will result in the file `//zshrc//' being **copied** to
-`//~/.zshrc//'.
+`//~/.zshrc//'. In order to make this call style a little more useful, the
+function takes shell-style arguments to alter its operation:
+
+: **--symlink**
+Deploy via the //symlink// method instead of copying.
+
+: **--no-dot**
+Leave the source file name as is, instead of prefixing it with a dot.
+
+
+An example can be found in **dewi(7)**.
 
 
 = OPTIONS =
