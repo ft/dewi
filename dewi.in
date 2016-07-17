@@ -295,8 +295,8 @@ sub user_get_bool_default {
 
 # helpers
 # hooks
-sub add_hook {
-    my ($h) = @_;
+sub __add_hook {
+    my ($store, $h) = @_;
     my ($ev);
 
     goto ERROR if (ref($h) ne 'HASH');
@@ -331,6 +331,17 @@ ERROR:
     print "usage: add_hook(<hash-ref>);\n";
     print "See dewifile(5) for details.\n";
     exit 1;
+}
+
+sub add_hook {
+    my ($h) = @_;
+    my $store = (defined $local_hooks) ? $local_hooks : $DewiInternal::hooks;
+    return __add_hook($store, $h);
+}
+
+sub add_hook_default {
+    my ($h) = @_;
+    return __add_hook($DewiInternal::hooks, $h);
 }
 
 # request empty directories
