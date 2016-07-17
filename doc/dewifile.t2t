@@ -275,6 +275,11 @@ Like **get_opt**, but returns a value from defaults.
 : **merge_path(** //PART_A//, //PART_B// **)**
 Portably join **PART_A** and **PART_B** into a combined path name.
 
+: **nuke_dead_links_register(** //DIRECTORY//, //GLOB// **)**
+Tell the predefined hook code //nuke_dead_links// (see **dewi(7)** for
+details), in which //DIRECTORY// look for dead symbolic links that match
+//GLOB//. This uses the //nuke-dead-links// setting to track its configuration.
+
 : **read_dewifile(** //PERL_SOURCE_FILE// **)**
 With this, you can read files in addition to //Dewifile// and
 //config.perl//. This may be useful if you want to include code like

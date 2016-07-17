@@ -427,6 +427,24 @@ Run right after a withdraw is done.
 
 Parameters: **0**: The package's name.
 
+== Predefined Hook Code ==
+
+//Dewi// ships predefined hook to be used as hooks: The //nuke_dead_links//
+Perl function can be used (as a //pre-deploy// hook for example) to remove dead
+symlinks from destination directories. To tell the hook where to look for what
+kinds of symlink names, see //nuke_dead_links// in **dewifile(5)**. Example
+usage:
+\
+```
+  foreach my $d (grep { -d } glob($ENV{HOME} . "/.emacs.d/vendor/*")) {
+      nuke_dead_links_register $d, q{*.el};
+  }
+
+  add_hook { type  => 'perl',
+             event => 'pre-deploy',
+             code  => \&nuke_dead_links };
+```
+
 
 = EXAMPLES =
 
