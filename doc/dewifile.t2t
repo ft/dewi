@@ -218,6 +218,23 @@ Like **add_hook**, but modifies the default sets of hooks.
 Like Perl's **print** subroutine, but only produces output if the
 `//debug//' option is set.
 
+: **clear_hook(** [//HOOK_NAME//] **)**
+Clear the list of callbacks for hook //HOOK_NAME//. If is not specified, the
+function clears **all** lists of hooks that are defined in the package-local
+storage.
+
+: **clear_hook_delete(** //HOOK_NAME// **)**
+Like **clear_hook**, but works on the default value lists.
+
+: **delete_hook(** [//HOOK_NAME//] **)**
+Delete the list of callbacks for hook //HOOK_NAME//. That means, that the code
+will fallback to the data stored in the default hook data structure. If
+//HOOK_NAME// is not specified, the entire package-local hook storage is
+deleted. Which means that **all** hooks will fall back to their defaults.
+
+: **delete_hook_delete(** //HOOK_NAME// **)**
+Like **delete_hook**, but works on the default value lists.
+
 : **deploy_directory(** //DIRECTORY_NAME// **)**
 Register a directory name for creation during deployment and removal
 during withdrawal (if the directory is empty during withdrawal, it is left

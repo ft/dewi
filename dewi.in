@@ -344,6 +344,28 @@ sub add_hook_default {
     return __add_hook($DewiInternal::hooks, $h);
 }
 
+sub clear_hook {
+    my ($hook) = @_;
+    my $store = (defined $local_hooks) ? $local_hooks : $DewiInternal::hooks;
+    return $store->clear($hook);
+}
+
+sub clear_hook_default {
+    my ($hook) = @_;
+    return $DewiInternal::hooks->clear($hook);
+}
+
+sub delete_hook {
+    my ($hook) = @_;
+    my $store = (defined $local_hooks) ? $local_hooks : $DewiInternal::hooks;
+    return $store->delete($hook);
+}
+
+sub delete_hook_default {
+    my ($hook) = @_;
+    return $DewiInternal::hooks->delete($hook);
+}
+
 # request empty directories
 sub deploy_directory {
     if ($#_ != 0) {
