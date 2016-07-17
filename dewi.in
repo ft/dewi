@@ -624,14 +624,18 @@ sub register {
     my $type = ref $arg;
 
     if ($type eq '') {
-        my ($nodot) = (0);
+        my ($nodot, $symlink) = (0, 0);
         my $p = Getopt::Long::Parser->new();
         $p->configure(qw{ require_order no_gnu_compat no_ignore_case });
-        $p->getoptionsfromarray(\@_, q{no-dot} => \$nodot);
+        $p->getoptionsfromarray(\@_,
+                                q{no-dot} => \$nodot,
+                                q{symlink} => \$symlink);
         die "usage: register( OPTION(s), ..., FILENAME );\n" if ($#_ != 0);
         debug("register(): --no-dot option used in trivial call.\n") if ($nodot != 0);
+        debug("register(): --symlink option used in trivial call.\n") if ($symlink != 0);
         my ($arg) = @_;
         my $hr = { glob      => "$arg",
+                   method    => (($symlink == 0) ? "copy" : "symlink"),
                    transform => ($nodot == 0) ? \&makedotfile : \&notransform };
         __register_defaults($hr);
         __register($hr);
