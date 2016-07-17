@@ -211,6 +211,9 @@ affecting each other.
 : **add_hook(** //HASHREF// **)**
 Add a hook to an event. For details, see `HOOKS' in //dewi(7)//.
 
+: **add_hook_default(** //HASHREF// **)**
+Like **add_hook**, but modifies the default sets of hooks.
+
 : **debug(** //PRINT_LIKE_ARGUMENTS// **)**
 Like Perl's **print** subroutine, but only produces output if the
 `//debug//' option is set.
@@ -246,6 +249,12 @@ are interpreted as //false//; **yes**, **yes_please**, **on**, **true**
 and **1** are interpreted as //true//. Other values are interpreted as
 //false//, too, but will trigger a warning).
 
+: **get_opt_bool_default(** //OPTION_NAME// **)**
+Like **get_opt_bool**, but returns a value from defaults.
+
+: **get_opt_default(** //OPTION_NAME// **)**
+Like **get_opt**, but returns a value from defaults.
+
 : **merge_path(** //PART_A//, //PART_B// **)**
 Portably join **PART_A** and **PART_B** into a combined path name.
 
@@ -261,6 +270,9 @@ below for details.
 : **set_opt(** //OPTION_NAME//, //OPTION_VALUE// **)**
 Set the option described by //OPTION_NAME// to the value //OPTION_VALUE//.
 
+: **set_opt_default(** //OPTION_NAME//, //OPTION_VALUE// **)**
+Like **set_opt**, but modifies default values.
+
 : **user_get(** //VARIABLE_NAME// **)**
 Returns the value of the variable described by //VARIABLE_NAME// in the
 user-variables namespace.
@@ -268,10 +280,18 @@ user-variables namespace.
 : **user_get_bool(** //VARIABLE_NAME// **)**
 Like `//get_opt_bool()//', but for the user-variables namespace.
 
+: **user_get_bool_default(** //VARIABLE_NAME// **)**
+Like **user_get_bool**, but returns a value from defaults.
+
+: **user_get_default(** //VARIABLE_NAME// **)**
+Like **user_get**, but returns a value from defaults.
+
 : **user_set(** //VARIABLE_NAME//, //VARIABLE_VALUE// **)**
 Set the variable described by //VARIABLE_NAME// to the value
 //VARIABLE_VALUE// in the user-variables namespace.
 
+: **user_set_default(** //VARIABLE_NAME//, //VARIABLE_VALUE// **)**
+Like **user_set**, but modifies default values.
 
 : **verbose(** //PRINT_LIKE_ARGUMENTS// **)**
 Like Perl's **print** subroutine, but only produces output if the
