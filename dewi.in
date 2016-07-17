@@ -236,9 +236,19 @@ sub set_opt {
     return DewiInternal::set_opt($key, $value);
 }
 
+sub set_opt_default {
+    my ($key, $value) = @_;
+    return DewiInternal::set_opt_default($key, $value);
+}
+
 sub get_opt {
     my ($key) = @_;
     return DewiInternal::get_opt($key);
+}
+
+sub get_opt_default {
+    my ($key) = @_;
+    return DewiInternal::get_opt_default($key);
 }
 
 sub get_opt_bool {
@@ -246,10 +256,21 @@ sub get_opt_bool {
     return DewiInternal::get_opt_bool($key);
 }
 
+sub get_opt_bool_default {
+    my ($key) = @_;
+    return DewiInternal::get_opt_bool_default($key);
+}
+
+
 # user definable settings
 sub user_set {
     my ($key, $value) = @_;
     return DewiInternal::user_set($key, $value);
+}
+
+sub user_set_default {
+    my ($key, $value) = @_;
+    return DewiInternal::user_set_default($key, $value);
 }
 
 sub user_get {
@@ -257,9 +278,19 @@ sub user_get {
     return DewiInternal::user_get($key);
 }
 
+sub user_get_default {
+    my ($key) = @_;
+    return DewiInternal::user_get_default($key);
+}
+
 sub user_get_bool {
     my ($key) = @_;
     return DewiInternal::user_get_bool($key);
+}
+
+sub user_get_bool_default {
+    my ($key) = @_;
+    return DewiInternal::user_get_bool_default($key);
 }
 
 # helpers
@@ -848,14 +879,29 @@ sub set_opt {
     return __set_opt($options, $DewiFile::local_options, q{option}, $key, $value);
 }
 
+sub set_opt_default {
+    my ($key, $value) = @_;
+    return __set_opt($options, undef, q{option}, $key, $value);
+}
+
 sub get_opt {
     my ($key) = @_;
     return __get_opt($options, $DewiFile::local_options, q{option}, $key);
 }
 
+sub get_opt_default {
+    my ($key) = @_;
+    return __get_opt($options, undef, q{option}, $key);
+}
+
 sub get_opt_bool {
     my ($key) = @_;
     return __get_opt_bool($options, $DewiFile::local_options, q{option}, $key);
+}
+
+sub get_opt_bool_default {
+    my ($key) = @_;
+    return __get_opt_bool($options, undef, q{option}, $key);
 }
 
 sub user_set {
@@ -864,16 +910,31 @@ sub user_set {
                      $key, $value);
 }
 
+sub user_set_default {
+    my ($key, $value) = @_;
+    return __set_opt($user_settings, undef, q{user setting}, $key, $value);
+}
+
 sub user_get {
     my ($key) = @_;
     return __get_opt($user_settings, $DewiFile::user_settings, q{user setting},
                      $key);
 }
 
+sub user_get_default {
+    my ($key) = @_;
+    return __get_opt($user_settings, undef, q{user setting}, $key);
+}
+
 sub user_get_bool {
     my ($key) = @_;
     return __get_opt_bool($user_settings, $DewiFile::user_settings,
                           q{user setting}, $key);
+}
+
+sub user_get_bool_default {
+    my ($key) = @_;
+    return __get_opt_bool($user_settings, undef, q{user setting}, $key);
 }
 
 # output
