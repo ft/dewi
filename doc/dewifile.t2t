@@ -534,7 +534,7 @@ function takes shell-style arguments to alter its operation:
 : **--symlink**
 Deploy via the //symlink// method instead of copying.
 
-: **--no-dot**
+: **--no-dotfile**
 Leave the source file name as is, instead of prefixing it with a dot.
 
 

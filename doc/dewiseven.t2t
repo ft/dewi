@@ -450,7 +450,7 @@ a number of arguments, that make things like that possible:
     end;
 ```
 
-Again, not too bad. Another option `**--no-dot**', tells the trivial
+Again, not too bad. Another option `**--no-dotfile**', tells the trivial
 //register// call style **not** to produce dotfiles, but leave the source file
 name untouched.
 
