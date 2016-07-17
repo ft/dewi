@@ -346,10 +346,16 @@ A very simple example looks like this:
 \
 ```
     add_hook { type  => 'shell-inline',
-                event => 'pre-deploy',
-                code  =>
+               event => 'pre-deploy',
+               place => 'start'   # The default is 'end'
+               code  =>
         'echo "name: $DEWI_HOOK_EVENT, 1st arg: $DEWI_HOOK_ARG0"' };
 ```
+
+The //place// argument defines where in a list of hooks the particular hook is
+added: The default is **end**, which appends the new hook at the end of an
+existing list. In case it is set to **start**, the new hook is instead added in
+front of an already existing list.
 
 
 == Hook-type: perl ==
