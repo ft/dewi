@@ -172,6 +172,41 @@ to be called by the user. These functions may not be useful to the user
 and their behaviour may change.
 
 
+== Configuration ==
+Apart from registering files for deployment, //dewi// uses two main ways for
+the user to adjust the program's behaviour. These are //options// and
+//hooks//. In addition, there is a second namespace for settings that is
+reserved for the user, named //user-settings// (they are otherwise equivalent
+to //dewi//'s options. However the core application will never use any of the
+values stored within user-settings. They are provided for having a way to
+implement configuration for user-written extensions.
+
+All of these sources of configuration have a set of default values: All default
+lists of hooks are the empty list; the set of user-settings is empty as well.
+The default option values are documented in the **OPTIONS** section below.
+These defaults apply to all packages that //dewi// is instructed to work on.
+These defaults may be adjusted using //_default// variants of the usual API
+functionality (like //set_opt_default//).
+
+Using (this applies to all three sources of configuration, but to continue the
+example) //set_opt// within a package's //Dewifile// will override a setting
+from its default value. The default value however is retained and will be put
+back into place when the programs transitions over to another package to
+process. Only the //_default// variant will touch the default value store. Note
+that this is usually not required and should only be done with extreme care.
+
+In the global //Dewifile// (the one that resides within the //.dewi//
+sub-directory its root-directory) the usual API (//set_opt//, //add_hook//
+etc.) is equivalent with their //_default// variants: They alter the default
+settings, because when the global Dewifile is read, package-local data storages
+to not exist, because at that point in time, //dewi// does not yet process any
+packages, yet.
+
+This setup allows for setting a desired default while still allowing arbitrary
+customisation within package-specific //Dewifile//s without multiple packages
+affecting each other.
+
+
 == Main API ==
 : **add_hook(** //HASHREF// **)**
 Add a hook to an event. For details, see `HOOKS' in //dewi(7)//.
