@@ -172,6 +172,13 @@ configuration files (like git with using `rebase').
 : **symlink**
 Instead of copying, create symbolic links.
 
+: **template**
+This is just like the **filtered** method, but uses Perl's Template module to
+perform the construction of the final file. This obviously requires the
+non-standard Templete module to be installed in order to work. The workings of
+that particular module are far too complex to be described in any detail within
+this manual. See its reference manuel for all the details.
+
 
 = FILTERING INPUT FILES =
 When deployed files need to carry information, which the input files don't
@@ -640,7 +647,7 @@ For that see the dewifile(5) manual page.
 
 
 = SEE ALSO =
-dewi(1), dewifile(5)
+dewi(1), dewifile(5), Template(3pm)
 
 
 = COPYRIGHT =
