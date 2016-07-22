@@ -558,7 +558,6 @@ This defines the type of filter that is being used if `//method//' is set
 to **filtered**. See //FILTERING INPUT FILES// in //dewi(7)// for details.
 
 : **glob**
-
 This may either be a string, an arrayref or a coderef. If it is a string, it is
 used as a globbing pattern to match certain files. If it is an arrayref, the
 entries work like multiple string arguments to `//glob//'. Finally, if it is a
