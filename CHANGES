@@ -1,0 +1,50 @@
+* 0.2 → 0.3:
+
+  - The program does not use “make” as its front-end anymore. Instead, a helper
+    application “dewi” is provided. See UPGRADING for details.
+
+  - dewifile(5): register() now understands a “post_glob” and
+    “post_glob_single” parameters.
+
+  - dewifile(5): register(): “glob” parameter may now be an array-ref as well.
+
+  - dewifile(5): Added “deploy_directory()”.
+
+  - dewifile(5): Added “filtered” method.
+
+  - dewifile(5): There is now a namespace for user-defined settings.
+
+  - dewifile(5): A hash called %DEWI makes some information about a package
+    available in Dewifiles.
+
+  - dewifile(5): Hooks allow the user to inject code at a number of places
+    during dewi's execution.
+
+  - dewifile(5): Predefined filter code: “simple_filter()”.
+
+  - dewifile(5): Predefined hook code: “nuke_dead_links()”.
+
+  - dewifile(5): Allow concatenating multiple files into a single destination
+    file when using the “filtered” method.
+
+  - dewifile(5): Added predefined globbing and destination code, that allows
+    registering recursive trees of files in a fairly simple manner.
+
+  - An optional dependency onto CPAN's IPC::Run3 module allows the
+    implementation of hooks, filters and concatenation callbacks as external
+    processes.
+
+  - An optional dependency onto CPAN's Template module adds a deployment method
+    called “template” that is similar to “filtered” but is much more full
+    featured right out of the box.
+
+  - Added a zsh completion for the “dewi” tool.
+
+  - dewifile(5): Added “find_cmd()” helper function.
+
+  - dewifile(5): The “register” function now supports a “--symlink” as well as
+    a “--no-dotfile” option with the trivial way of calling the function.
+
+  - Lots of bug fixes.
+
+  - Lots of documentation updates and enhancements.
