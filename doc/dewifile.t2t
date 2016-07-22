@@ -256,6 +256,19 @@ errors and warnings.
 : **expand_path(** //PATH// **)**
 Perform tilde-expansion on **PATH**.
 
+: **find_cmd(** //BINARY-NAME//[, //HASH_REF// ] **)**
+This utility function can be used to find the full path-name of a program named
+//BINARY-NAME// in the execution environment, or a given list of directories.
+The opitional //HASH-REF// argument is used to perform configuration of a
+//find_cmd()// call. It takes three keys into account: If //path// maps to an
+array-ref, it is used instead of the **$PATH** environment variable as the list
+of directories to look in for the program. The //more// key is similar to
+//path//, but instead of overriding the contents of **$PATH**, it //adds// to
+it. Finally, the //fallback// key may map to a string, that will be returned by
+the function in case, the program in question could not be found. Otherwise,
+//undef// is returned.
+
+
 : **get_opt(** //OPTION_NAME// **)**
 Returns the value of the option described by //OPTION_NAME//.
 
