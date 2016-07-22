@@ -91,12 +91,6 @@ __install_doc() {
     __copy "LICENCE" "${docdir}/LICENCE"
 }
 
-__install_examples() {
-    for i in "nuke-deadlinks" "simple-filter"; do
-        __copy "examples/$i" "${docdir}/examples/$i"
-    done
-}
-
 umask 022
 case "$1" in
     all-but-doc)
@@ -109,7 +103,6 @@ case "$1" in
         __create_dirs
         __install_man
         __install_doc
-        __install_examples
         ;;
     uninstall)
         __remove_old
