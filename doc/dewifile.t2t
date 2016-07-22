@@ -295,6 +295,11 @@ Set the option described by //OPTION_NAME// to the value //OPTION_VALUE//.
 : **set_opt_default(** //OPTION_NAME//, //OPTION_VALUE// **)**
 Like **set_opt**, but modifies default values.
 
+: **simple_filter_init(** //FILE// **)**
+Read a configuration file for the //simple_filter// mechanism, described in
+**Predefined Filter Code** in **dewi(7)**. This uses th //simple-filter-cfg//
+configuration variable to carry its data from setup to filter sub-routine.
+
 : **user_get(** //VARIABLE_NAME// **)**
 Returns the value of the variable described by //VARIABLE_NAME// in the
 user-variables namespace.

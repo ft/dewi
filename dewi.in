@@ -503,6 +503,48 @@ sub print_filter {
     return $line;
 }
 
+sub simple_filter_init {
+    my ($file) = @_;
+    unless (defined $file) {
+        warn qq{Usage: simple_filter_init('<file>');\n};
+        return 0;
+    }
+    $file = DewiInternal::expand_dir($file);
+    my $store = (defined $local_options) ? $local_options : $DewiInternal::options;
+    my $cfg = $store->get(q{simple-filter-cfg});
+    $cfg = {} unless (defined $cfg);
+    open my $in, q{<}, $file or do {
+        warn "Could not open file ($file): $ERRNO\n";
+        return 0;
+    };
+    while (my $line = <$in>) {
+        my ($tag, $repl);
+        chomp $line;
+        next if ($line =~ m/^\s*#/ || $line =~ m/^\s*$/);
+        if (($tag, $repl) = $line =~ m/^([^:]+):(.*)$/) {
+            $cfg->{$tag} = $repl;
+        } else {
+            warn "Unknown line in filter file: \"$line\"\n";
+            return 0;
+        }
+    }
+    close $in;
+    $store->set(q{simple-filter-cfg}, $cfg);
+    return 1;
+}
+
+sub simple_filter {
+    my ($line) = @_;
+    my $store = (defined $local_options) ? $local_options : $DewiInternal::options;
+    my $cfg = $store->get(q{simple-filter-cfg});
+    return $line unless (defined $cfg && ref $cfg eq q{HASH});
+    foreach my $tag (sort keys %{ $cfg }) {
+        my $repl = $cfg->{$tag};
+        $line =~ s/$tag/$repl/g;
+    }
+    return $line;
+}
+
 # path name helpers
 sub merge_path {
     if ($#_ != 1) {

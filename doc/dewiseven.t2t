@@ -228,6 +228,55 @@ When //dewi// receives this, it exists and returns a successful value.
 When this signal is received, it exists and returns failure.
 
 
+== Predefined Filter Code ==
+
+//Dewi// ships with predefined code to use with the //filtered// method: The
+//simple_filter// function offers a very simple configurable filter. To use it
+you would roughly do this:
+\
+```
+    register( { glob   => 'muttrc',
+                filter => \&simple_filter } );
+```
+
+Then, the basic operation is as follows: At the beginning of Dewifile you call
+the `simple_filter_init()' function. That subroutine tries to read
+~/.sensdata/foo, where `foo' is the last part of the current directory. So, if
+you are in `~/etc/mutt' it would look for `~/.sensdata/mutt'.
+
+The file should contain lines that look like this:
+\
+```
+    TAG:replacement
+```
+
+Where `TAG' can be anything except for a colon or a linebreak. Then when the
+filter encounters TAG in a line of the input file, it replaces it by
+`replacement'. Also, lines of which the first non- whitespace character is
+a `#' will be considered comments. They, like empty lines, will be ignored.
+
+So, a line like: "@@POP3_PASSWD@@:mypassword" would replace any occurance of
+`@@POP3_PASSWD@@' by "mypassword".
+
+Finally, here is a full example:
+
+~/.sensitive-data/mutt:
+\
+```
+    @@POP3_PASSWD@@:mypassword
+```
+
+~/etc/mutt/Dewifile:
+\
+```
+    if (simple_filter_init('~/.sensitive-data/mutt')) {
+        register( { glob        => 'muttrc',
+                    filter      => \&simple_filter,
+                    destination => '~/.mutt' } );
+    }
+```
+
+
 == Concatenated Deployment ==
 
 This is an extension to filtered deployment. The idea is to concatenate
