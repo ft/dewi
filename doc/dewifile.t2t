@@ -223,7 +223,7 @@ Clear the list of callbacks for hook //HOOK_NAME//. If is not specified, the
 function clears **all** lists of hooks that are defined in the package-local
 storage.
 
-: **clear_hook_delete(** //HOOK_NAME// **)**
+: **clear_hook_default(** //HOOK_NAME// **)**
 Like **clear_hook**, but works on the default value lists.
 
 : **delete_hook(** [//HOOK_NAME//] **)**
@@ -232,7 +232,7 @@ will fallback to the data stored in the default hook data structure. If
 //HOOK_NAME// is not specified, the entire package-local hook storage is
 deleted. Which means that **all** hooks will fall back to their defaults.
 
-: **delete_hook_delete(** //HOOK_NAME// **)**
+: **delete_hook_default(** //HOOK_NAME// **)**
 Like **delete_hook**, but works on the default value lists.
 
 : **deploy_directory(** //DIRECTORY_NAME// **)**
