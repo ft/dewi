@@ -244,9 +244,11 @@ The same expansions as with the //register()// function's `**destination**'
 parameter is performed on the //DIRECTORY_NAME// argument.
 
 : **dewifile_is_empty()**
-Prints a message telling the user that the `//Dewifile//' needs to be
-filled with suitable content. This is the function that is inserted
-into the `//Dewifile//' created by "**dewi update**".
+Prints a message telling the user that the `//Dewifile//' needs to be filled
+with suitable content. This is the function that is inserted into the
+`//Dewifile//' created by "**dewi init**". In that file, the function should be
+replaced by a call to //end()//, which serves the same purpose without printing
+said message.
 
 : **end()**
 This function does nothing, but it returns a true value. You can use it
