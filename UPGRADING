@@ -1,0 +1,33 @@
+* Backward incompatible changes in dewi
+
+This file details changes that may break the use of existing dewi usage with
+newer versions of the program. After the release of version 1.0 of the
+application, such changes will only happen at releases that increase dewi's
+major version number.
+
+** Version 0.2 → Version 0.3
+
+Version 0.3 introduces massive changes within the project. It fixes a number of
+design decisions and adds a large number of new features. For that reason, this
+release will also be the basis for dewi's 1.0 release. See the project's
+CHANGES file for details.
+
+*** “make” is no longer the program's cli frontend
+
+Previously, dewi used “make” in order to trigger its operations. Besides the
+obvious dependency on an implementation of make, this is the reason for a
+number of downsides in dewi's use, worst of which is the need for a specialised
+Makefile in each directory that contains packages that dewi is supposed to work
+on. For example, that means that all dewified directories had to carry such a
+file, and track changes on such a file in case the upstream file changes.
+
+This release uses a program called “dewi” to trigger and carry out its
+operations. There is also no “.dewi/bin/dewi” program anymore. All of its
+functionality is now contained within the command line tool. See its manual
+page for all details.
+
+*** “.dewi/config.perl” is now “.dewi/Dewifile”
+
+This change was done for consistency. Also, since this is the only
+configuration file that is read, the perl suffix never really made a lot of
+sense.
