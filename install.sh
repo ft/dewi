@@ -89,6 +89,8 @@ __install_man() {
 __install_doc() {
     __copy "README" "${docdir}/README"
     __copy "LICENCE" "${docdir}/LICENCE"
+    __copy "CHANGES" "${docdir}/CHANGES"
+    __copy "UPGRADING" "${docdir}/UPGRADING"
 }
 
 umask 022
