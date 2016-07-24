@@ -68,7 +68,6 @@ __create_dirs() {
     [ ! -d "${mandir}/man5" ] && __mkdir "${mandir}/man5"
     [ ! -d "${mandir}/man7" ] && __mkdir "${mandir}/man7"
     [ ! -d "${docdir}" ] && __mkdir "${docdir}"
-    [ ! -d "${docdir}/examples" ] && __mkdir "${docdir}/examples"
     [ ! -d "${datadir}" ] && __mkdir "${datadir}"
 }
 
