@@ -12,6 +12,8 @@ bin/inall.sh
 doc/*.1
 doc/*.5
 doc/*.7
+doc/*.pdf
+doc/*.html
 dewi
 local.stamp
 bin/dewi.pl
