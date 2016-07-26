@@ -1,0 +1,886 @@
+DEWIFILE
+
+Jul, 2016
+
+# NAME
+
+Dewifile - dewi(7) configuration
+
+# DESCRIPTION
+
+Each subdirectory of a central dewi directory needs a files called
+\`*Dewifile*', which instructs which files are to be deployed (and maybe
+later withdrawn, too) and how.
+
+The \`*Dewifile*' is a *Perl script* to allow for maximum control of the
+process. It features a simple, yet powerful API for registering files
+with dewi.
+
+## Emergency Perl
+
+*Relax*.
+
+You actually do not have to know any Perl to use dewi. You can get by
+just fine by cut-and-pasting snippets from the included example code.
+Here are five concepts that may help you to understand what is actually
+going on:
+
+Comments
+
+:   
+
+They start in a hash-mark and span to the end of the current line, like
+this: \\
+
+        # Hi there, I'm a comment and span to the end of the line.
+
+Subroutine application
+
+:   
+
+Calls some code and returns something. Never mind that it returns
+something. It runs some code. and looks like this: \\
+
+        thesubroutine("first argument", 'second', 3);
+
+\\ As a bonus, you now know what scalar values like strings and numbers
+look like. You can even leave the parentheses off the call if you like:
+\\
+
+        thesubroutine "first argument", 'second', 3;
+
+\\ People may argue against this variant in the realm of real Perl
+programs. But in Dewifiles, I perfer the paren-less syntax personally.
+
+Hashrefs
+
+:   
+
+Actually a reference to a hash (otherwise known as associative arrays or
+key-value storages). It looks like this: \\
+
+        { key1 => value1,
+          key2 => value2,
+          key3 => value3,
+          # ...
+          keyN => valueN }
+
+\\ So, in short they are nicely looking key-value pairs within curly
+braces. For the purpose of Dewifiles can forget about the reference part
+in hashrefs entirely. To you as a user it doesn't make a difference at
+all. The reason dewi uses hashrefs is that it makes complex subroutine
+calls more readable. Consider: \\
+
+        register('foo.conf',
+                 '~/.foo',
+                 'filtered',
+                 'shell-inline',
+                 'sed -e "s,@VERSION@,0.2f,"');
+
+\\ ...and then this: \\
+
+        register { glob        => 'foo.conf',
+                   destination => '~/.foo',
+                   method      => 'filtered',
+                   filtertype  => 'shell-inline',
+                   filter      => 'sed -e "s,@VERSION@,0.2f,"' };
+
+\\ You do not have to remember which argument goes where. The order is
+arbitrary. Putting keys in front of values makes complex calls self
+documenting as well. Also, you do not have to always put in all
+arguments to a subroutine call. You can just leave out the ones for
+which you will not be changing the default value anyway.
+
+Arrayrefs
+
+:   
+
+These are references to arrays. Again like with hashrefs, you can just
+forget about the reference part. In essence, it's *dewi*'s idea of **a
+list**. You form it by putting a list of elements into square brackets,
+like this: \\
+
+        [ "foo bar", "baz", "fred", "alice", "barney", "frob" ]
+
+Coderefs
+
+:   
+
+Code references point to stuff that can be executed. Subroutines. Dewi
+uses coderefs to let you inject code in many places to solve complex
+problems. To create a coderef to a subroutine called \`*mysubroutine*'
+you do this: \\
+
+        \&mysubroutine
+
+\\
+
+Simple enough. You can also define anonymous subroutines whereever you
+like and they will return a coderef to said anonymous subroutine. That
+would look like this: \\
+
+        sub { THE CODE OF THE ANONYMOUS SUBROUTINE GOES HERE. }
+
+\\
+
+To further visualize this, consider these examples: \\
+
+        # Create a named subroutine, that prefixes an
+        # input string with a dot.
+        sub my_make_dot_file {
+           my ($originalfilename) = @_;
+           return "." . $originalfilename;
+        }
+        register { glob      => 'gitconfig',
+                   transform => \&my_make_dot_file };
+        
+        # The same can be done using an anonymous subroutine.
+        register { glob      => 'gitconfig',
+                   transform => sub { return "." . $_[0] } };
+
+\\ Note, that dewi ships a subroutine for this particular problem (see
+the \`*makedotfile()*' documentation below). \\ The reason coderefs are
+used instead of options like "make-this-a-dotfile" is to give the user
+freedom to do whatever they need to do to accomplish a given task. If
+you need to have a file name be transformed into something more exotic,
+you can just do that without having to ask for new features.
+
+This should be enough as an introduction. I could go into more detail.
+Like "What is @\_?" (it's the list of arguments passed to a subroutine)
+or "What is \$\_\[0\]?" (it accesses the first element from \`@\_')...
+But this was meant to briefly introduce the concepts used in Dewifiles
+so you can **use** dewi. If you would like to extend it in non-trivial
+ways, I suggest you pick up a little Perl first ("Learning Perl",
+"Programming Perl" and "Perl Best Practices" come to mind).
+
+# API
+
+The API is quite simple. Mostly, you will be using the \`*register()*'
+and \`*set\_opt()*' functions. The latter for setting options, such as
+\`*debug*', \`*verbose*' and \`*dryrun*'. Below is a description of the
+official API. There may be a number of functions available, that start
+with two leading underscores. These functions are **not** meant to be
+called by the user. These functions may not be useful to the user and
+their behaviour may change.
+
+## Configuration
+
+Apart from registering files for deployment, *dewi* uses two main ways
+for the user to adjust the program's behaviour. These are *options* and
+*hooks*. In addition, there is a second namespace for settings that is
+reserved for the user, named *user-settings* (they are otherwise
+equivalent to *dewi*'s options. However the core application will never
+use any of the values stored within user-settings. They are provided for
+having a way to implement configuration for user-written extensions.
+
+All of these sources of configuration have a set of default values: All
+default lists of hooks are the empty list; the set of user-settings is
+empty as well. The default option values are documented in the
+**OPTIONS** section below. These defaults apply to all packages that
+*dewi* is instructed to work on. These defaults may be adjusted using
+*\_default* variants of the usual API functionality (like
+*set\_opt\_default*).
+
+Using (this applies to all three sources of configuration, but to
+continue the example) *set\_opt* within a package's *Dewifile* will
+override a setting from its default value. The default value however is
+retained and will be put back into place when the programs transitions
+over to another package to process. Only the *\_default* variant will
+touch the default value store. Note that this is usually not required
+and should only be done with extreme care.
+
+In the global *Dewifile* (the one that resides within the *.dewi*
+sub-directory its root-directory) the usual API (*set\_opt*, *add\_hook*
+etc.) is equivalent with their *\_default* variants: They alter the
+default settings, because when the global Dewifile is read,
+package-local data storages to not exist, because at that point in time,
+*dewi* does not yet process any packages, yet.
+
+This setup allows for setting a desired default while still allowing
+arbitrary customisation within package-specific *Dewifile*s without
+multiple packages affecting each other.
+
+## Main API
+
+**add\_hook(** *HASHREF* **)**
+
+:   
+
+Add a hook to an event. For details, see \`HOOKS' in *dewi(7)*.
+
+**add\_hook\_default(** *HASHREF* **)**
+
+:   
+
+Like **add\_hook**, but modifies the default sets of hooks.
+
+**debug(** *PRINT\_LIKE\_ARGUMENTS* **)**
+
+:   
+
+Like Perl's **print** subroutine, but only produces output if the
+\`*debug*' option is set.
+
+**clear\_hook(** \[*HOOK\_NAME*\] **)**
+
+:   
+
+Clear the list of callbacks for hook *HOOK\_NAME*. If is not specified,
+the function clears **all** lists of hooks that are defined in the
+package-local storage.
+
+**clear\_hook\_default(** *HOOK\_NAME* **)**
+
+:   
+
+Like **clear\_hook**, but works on the default value lists.
+
+**delete\_hook(** \[*HOOK\_NAME*\] **)**
+
+:   
+
+Delete the list of callbacks for hook *HOOK\_NAME*. That means, that the
+code will fallback to the data stored in the default hook data
+structure. If *HOOK\_NAME* is not specified, the entire package-local
+hook storage is deleted. Which means that **all** hooks will fall back
+to their defaults.
+
+**delete\_hook\_default(** *HOOK\_NAME* **)**
+
+:   
+
+Like **delete\_hook**, but works on the default value lists.
+
+**deploy\_directory(** *DIRECTORY\_NAME* **)**
+
+:   
+
+Register a directory name for creation during deployment and removal
+during withdrawal (if the directory is empty during withdrawal, it is
+left alone). This allows for the creation of empty directories during
+deployment. \\ The same expansions as with the *register()* function's
+\`**destination**' parameter is performed on the *DIRECTORY\_NAME*
+argument.
+
+**dewifile\_is\_empty()**
+
+:   
+
+Prints a message telling the user that the \`*Dewifile*' needs to be
+filled with suitable content. This is the function that is inserted into
+the \`*Dewifile*' created by "**dewi init**". In that file, the function
+should be replaced by a call to *end()*, which serves the same purpose
+without printing said message.
+
+**end()**
+
+:   
+
+This function does nothing, but it returns a true value. You can use it
+at the very end of a \`*Dewifile*' so that Perl can source it without
+errors and warnings.
+
+**expand\_path(** *PATH* **)**
+
+:   
+
+Perform tilde-expansion on **PATH**.
+
+**find\_cmd(** *BINARY-NAME*\[, *HASH\_REF* \] **)**
+
+:   
+
+This utility function can be used to find the full path-name of a
+program named *BINARY-NAME* in the execution environment, or a given
+list of directories. The opitional *HASH-REF* argument is used to
+perform configuration of a *find\_cmd()* call. It takes three keys into
+account: If *path* maps to an array-ref, it is used instead of the
+**\$PATH** environment variable as the list of directories to look in
+for the program. The *more* key is similar to *path*, but instead of
+overriding the contents of **\$PATH**, it *adds* to it. Finally, the
+*fallback* key may map to a string, that will be returned by the
+function in case, the program in question could not be found. Otherwise,
+*undef* is returned.
+
+**get\_opt(** *OPTION\_NAME* **)**
+
+:   
+
+Returns the value of the option described by *OPTION\_NAME*.
+
+**get\_opt\_bool(** *OPTION\_NAME* **)**
+
+:   
+
+Returns the value of the option described by *OPTION\_NAME*, interpreted
+as a boolean value (**no**, **no\_thanks**, **off**, **false** and **0**
+are interpreted as *false*; **yes**, **yes\_please**, **on**, **true**
+and **1** are interpreted as *true*. Other values are interpreted as
+*false*, too, but will trigger a warning).
+
+**get\_opt\_bool\_default(** *OPTION\_NAME* **)**
+
+:   
+
+Like **get\_opt\_bool**, but returns a value from defaults.
+
+**get\_opt\_default(** *OPTION\_NAME* **)**
+
+:   
+
+Like **get\_opt**, but returns a value from defaults.
+
+**merge\_path(** *PART\_A*, *PART\_B* **)**
+
+:   
+
+Portably join **PART\_A** and **PART\_B** into a combined path name.
+
+**nuke\_dead\_links\_register(** *DIRECTORY*, *GLOB* **)**
+
+:   
+
+Tell the predefined hook code *nuke\_dead\_links*, in which *DIRECTORY*
+look for dead symbolic links that match *GLOB*. This uses the
+*nuke-dead-links* setting to track its configuration.
+
+**read\_dewifile(** *PERL\_SOURCE\_FILE* **)**
+
+:   
+
+With this, you can read files in addition to *Dewifile* and
+*config.perl*. This may be useful if you want to include code like
+example filters without pasting the whole code to either file.
+
+**register(** *HASHREF* | *STRING\_SCALAR* **)**
+
+:   
+
+This is the major file registration function. See \`THE REGISTER
+FUNCTION' below for details.
+
+**set\_opt(** *OPTION\_NAME*, *OPTION\_VALUE* **)**
+
+:   
+
+Set the option described by *OPTION\_NAME* to the value *OPTION\_VALUE*.
+
+**set\_opt\_default(** *OPTION\_NAME*, *OPTION\_VALUE* **)**
+
+:   
+
+Like **set\_opt**, but modifies default values.
+
+**simple\_filter\_init(** *FILE* **)**
+
+:   
+
+Read a configuration file for the *simple\_filter* mechanism, described
+in **Predefined Filter Code**. This uses th *simple-filter-cfg*
+configuration variable to carry its data from setup to filter
+sub-routine.
+
+**user\_get(** *VARIABLE\_NAME* **)**
+
+:   
+
+Returns the value of the variable described by *VARIABLE\_NAME* in the
+user-variables namespace.
+
+**user\_get\_bool(** *VARIABLE\_NAME* **)**
+
+:   
+
+Like \`*get\_opt\_bool()*', but for the user-variables namespace.
+
+**user\_get\_bool\_default(** *VARIABLE\_NAME* **)**
+
+:   
+
+Like **user\_get\_bool**, but returns a value from defaults.
+
+**user\_get\_default(** *VARIABLE\_NAME* **)**
+
+:   
+
+Like **user\_get**, but returns a value from defaults.
+
+**user\_set(** *VARIABLE\_NAME*, *VARIABLE\_VALUE* **)**
+
+:   
+
+Set the variable described by *VARIABLE\_NAME* to the value
+*VARIABLE\_VALUE* in the user-variables namespace.
+
+**user\_set\_default(** *VARIABLE\_NAME*, *VARIABLE\_VALUE* **)**
+
+:   
+
+Like **user\_set**, but modifies default values.
+
+**verbose(** *PRINT\_LIKE\_ARGUMENTS* **)**
+
+:   
+
+Like Perl's **print** subroutine, but only produces output if the
+\`*verbose*' option is set.
+
+## Predefined Destination Code
+
+It is possible to pass a coderef as a value for the \`*register()*'
+function's \`**destination**' parameter. The \`**destarg**' parameter is
+passed as this function's first argument. The second argument provided
+to this function is a hashref containing information about each file in
+question. The following keys are available:
+
+**path**
+
+:   
+
+The entire source file name.
+
+**srcdir**
+
+:   
+
+The directory part of the source file name.
+
+**name**
+
+:   
+
+The file part of the source file name.
+
+**transformed**
+
+:   
+
+The proposed file name part of the destination file. This is basically
+the value of \`*name*', but after all configured file name
+transformation code has been run on it.
+
+The destination coderef needs to return a **string** value, which will
+be used as the destination directory for the currently processed file.
+
+The following subroutines are available as \`*destination*' callbacks in
+Dewifiles per default:
+
+**recursive\_dirname**
+
+:   
+
+Constructs a multi-level destination directory from a given source file
+name. This is useful to automatically register whole subtrees for
+deployment in conjunction with \`*recursivefiles()*' as a \`**glob**'
+callback (See *"Predefined Globbing Code"* below for details and an
+example.) \\ This subroutine uses \`*destarg*' as a root directory in
+which to put the multi-level subtree (by concatenating the \`**srcdir**'
+part from its hashref argument to it).
+
+## Predefined Hook Code
+
+*Dewi* ships predefined hook to be used as hooks: The
+*nuke\_dead\_links* Perl function can be used (as a *pre-deploy* hook
+for example) to remove dead symlinks from destination directories. To
+tell the hook where to look for what kinds of symlink names, see
+*nuke\_dead\_links* in **dewifile(5)**. Example usage: \\
+
+      foreach my $d (grep { -d } glob($ENV{HOME} . "/.emacs.d/vendor/*")) {
+          nuke_dead_links_register $d, q{*.el};
+      }
+
+      add_hook { type  => 'perl',
+                 event => 'pre-deploy',
+                 code  => \&nuke_dead_links };
+
+## Predefined Filter Code
+
+These functions may be used as coderef values to the \`**filter**'
+property of the \`*register()*' function. The current input line is
+passed as the code's only argument.
+
+**print\_filter(** *INPUT\_LINE* **)**
+
+:   
+
+Outputs the input line unfiltered. This is the default filter is no
+other is specified.
+
+*Dewi* ships with a second bit code to use with the *filtered* method,
+that can actually change its input: The *simple\_filter* function offers
+a very simple configurable filter. To use it you would roughly do this:
+\\
+
+        register( { glob   => 'muttrc',
+                    filter => \&simple_filter } );
+
+Then, the basic operation is as follows: At the beginning of Dewifile
+you call the \`simple\_filter\_init()' function. That subroutine tries
+to read \~/.sensdata/foo, where \`foo' is the last part of the current
+directory. So, if you are in \`\~/etc/mutt' it would look for
+\`\~/.sensdata/mutt'.
+
+The file should contain lines that look like this: \\
+
+        TAG:replacement
+
+Where \`TAG' can be anything except for a colon or a linebreak. Then
+when the filter encounters TAG in a line of the input file, it replaces
+it by \`replacement'. Also, lines of which the first non- whitespace
+character is a \`\#' will be considered comments. They, like empty
+lines, will be ignored.
+
+So, a line like:
+[mailto:%22@@POP3\_PASSWD@@]("@@POP3_PASSWD@@):mypassword" would replace
+any occurance of \`@@POP3[mailto:\_PASSWD@@](_PASSWD@@)' by
+"mypassword".
+
+Finally, here is a full example:
+
+\~/.sensitive-data/mutt: \\
+
+        @@POP3_PASSWD@@:mypassword
+
+\~/etc/mutt/Dewifile: \\
+
+        if (simple_filter_init('~/.sensitive-data/mutt')) {
+            register( { glob        => 'muttrc',
+                        filter      => \&simple_filter,
+                        destination => '~/.mutt' } );
+        }
+
+## Predefined Globbing Code
+
+These functions are to be used as coderef values to the \`*register()*'
+function's \`**glob**' argument. The \`**globarg**' parameter is passed
+to the globbing function's first and only argument.
+
+**regularfiles(** *GLOB\_STRING* **)**
+
+:   
+
+Matches only regular files, that match *GLOB\_STRING*.
+
+**recursivefiles(** (*HASH\_REF*|*BASE\_DIR\_STRING*) **)**
+
+:   
+
+Like \`*regularfiles()*' but works recursively. The argument has to be a
+hashref or a string. The hashref argument is the generic one. Two keys
+are used: \`*basedir*' and \`*regex*'. \`*basedir*' is the directory in
+which file name generation should start. \`*regex*' is a regular
+expression, each generated file is matched against. Only if the regular
+expression matches the file name, the file is used. **Note\*: This is a
+\*\*difference** between this function and \`*regularfiles()*', because
+\`*regularfiles()*' uses a shell globbing pattern \*NOT\* a Perl regular
+expression. \\ The default value for \`*basedir*' is \`*.*'. Meaning
+that the file generation starts in the current directory. \\ For
+\`*regex*' the default value is \`*.*', which means that every file
+generated will be matched. \\ If instead of a hashref, a string is
+given, it will be used as the value for \`*basedir*'. \`*regex*' gets
+its default value. \\ Example: \\
+
+        register { glob        => \&recursivefiles,
+                   globarg     => { basedir => 'snippets',
+                                    regex   => '\.yasnippet$' },
+                   method      => 'copy',
+                   destination => \&recursive_dirname,
+                   destarg     => '~/.emacs.d' } };
+
+\\ See *"Predefined Destination Code"* above for details on
+\`*recursive\_dirname()*' and \`*destarg*'.
+
+## Predefined Post-Glob Code
+
+The functions described in this sub-section are supposed to be used as
+coderef values to the \`*register()*' function's \`**post\_glob**'
+argument. If you need to use more than one, you can easily chain them
+like this: \\
+
+        register { glob        => 'zshrc.d/*',
+                   method      => 'copy',
+                   destination => '~/.zshrc.d',
+                   post_glob   => sub {
+                        return remove_hashes( remove_tilde(@_) ) } };
+
+**remove\_tilde**
+
+:   
+
+Many editors create backup files in the form of **foo.txt\~**. Using
+this function as the *post\_glob* parameter removes these files.
+
+**remove\_hashes**
+
+:   
+
+Some editors (like emacs) create files like **\#foo.txt\#** while
+running. This function as the *post\_glob* parameter removes these.
+
+## Predefined Transform Code
+
+These functions are meant to be used as coderef values of
+\`*register()*' function's \`**transform**' argument. The file name in
+question is passed to this the function's first and only argument.
+
+**makedotfile(** *INPUT\_STRING* **)**
+
+:   
+
+Prefixes the filename with a dot. For example \`*foo*' turns into
+\`*.foo*'.
+
+**notransform(** *INPUT\_STRING* **)**
+
+:   
+
+Does no transformation at all. This is the default transformation.
+
+# THE REGISTER FUNCTION
+
+The \`*register()*' function is the main facility to tell **dewi** about
+files it should deploy. It can be called in two ways: with a **scalar
+string** as it's sole argument; and with a **hashref** as its only
+argument which gives detailed control over how **dewi** will behave.
+
+## hashref argument
+
+The hashref call basically looks like this: \\
+
+        register { key0        => 'value0',
+                   key1        => 'value1',
+                   ...
+                   keyN        => "valueN" };
+
+Possible keys are:
+
+**destination**
+
+:   
+
+Where to put the files registered in this call. Defaults to the user's
+home directory. If this parameter is a coderef, that code is executed to
+construct a suitable destination directory for the file in question. See
+*"Predefined Destination Code "* above for details on how that works.
+
+**filter**
+
+:   
+
+If \`*method*' is set to **filtered**, this specifies the filter, that
+will be applied while deploying. \\ This can be either a string (in case
+the \`*filtertype*' parameter is set to either "**shell-file**" or
+"**shell-inline**") or a coderef (in case \`*filtertype*' is
+"**perl**"). \\ See *FILTERING INPUT FILES* in *dewi(7)* for details.
+
+**filtertype**
+
+:   
+
+This defines the type of filter that is being used if \`*method*' is set
+to **filtered**. See *FILTERING INPUT FILES* in *dewi(7)* for details.
+
+**glob**
+
+:   
+
+This may either be a string, an arrayref or a coderef. If it is a
+string, it is used as a globbing pattern to match certain files. If it
+is an arrayref, the entries work like multiple string arguments to
+\`*glob*'. Finally, if it is a coderef, the function the reference
+points to is called with the **globarg** key's value as its argument.
+
+This is the only key that has **no default value**. It must be
+specified.
+
+**globarg**
+
+:   
+
+If the **glob** key's value is a coderef, the value of this key is
+handed over to the referenced function as its only argument.
+
+**post\_glob**
+
+:   
+
+This key's value may be a coderef to a subroutine that let's you modify
+the list of files returned by the globbing mechanism. The referenced
+subroutine gets all globbed file names as arguments and must return an
+array of file names. This key has no default value.
+
+**post\_glob\_single**
+
+:   
+
+When \`*glob*' is an arrayref, this is like \`*post\_glob*', but called
+for each and every entry in that list. If \`*post\_glob*' is specified
+as well, it is still called for the entire file list.
+
+**transform**
+
+:   
+
+The filename transformation is handled by the function referenced by
+this key's value, which has to be a coderef. It defaults to a reference
+to \`*notransform*' which means, that no transformation is done per
+default.
+
+**method**
+
+:   
+
+This key has to be a string which defined how the registered file should
+be deployed by "**make deploy**". This defaults to \`*copy*'. See
+dewi(7) for details about the different possible methods.
+
+**concatenate**
+
+:   
+
+Destination file name used with *Concatenated Deployment* (see *dewi(7)*
+for details). If used, this is passed to \`**transform**'. Only valied
+with \`*method*' set to \`**filtered**'.
+
+**intercat**
+
+:   
+
+Used with *Concatenated Deployment*: Hashref, that specifies
+inter-concatenation callback code (see *dewi(7)* for details).
+
+A full example could look like this: \\
+
+        register { glob        => 'zshrc',
+                   method      => 'symlink',
+                   transform   => \&makedotfile };
+
+## string argument
+
+In **very** simple cases, you may only want to copy one file as a
+dotfile to the user's home directory. In such a case, you may do this:
+\\
+
+        register 'zshrc';
+
+That will use default values for all previously described keys, except
+for \`*transform*' which will be set to \`*\\&makedotfile*'. So, the
+above register call will result in the file \`*zshrc*' being **copied**
+to \`*\~/.zshrc*'. In order to make this call style a little more
+useful, the function takes shell-style arguments to alter its operation:
+
+**--symlink**
+
+:   
+
+Deploy via the *symlink* method instead of copying.
+
+**--no-dotfile**
+
+:   
+
+Leave the source file name as is, instead of prefixing it with a dot.
+
+An example can be found in **dewi(7)**.
+
+# OPTIONS
+
+**debug**
+
+:   
+
+Be very noisy during execution. This provides details during the
+execution of the \`*Dewifile*' as well as during the file
+deployment/withdrawal. This defaults to \`*false*'.
+
+**dryrun**
+
+:   
+
+Run, but do not actually do anything. This is useful for writing
+Dewifiles in connection with either the \`*verbose*' or the \`*debug*'
+option. This defaults to \`*false*'.
+
+**filter\_always**
+
+:   
+
+If set to \`*true*', this will cause files that were registered using
+the \`**filtered**' method to **always** be remade no matter of their
+age. This may be useful, when you are changing filter scripts and need
+to test a lot. This defaults to \`*false*'.
+
+**verbose**
+
+:   
+
+Emit status messages during the file deployment/withdrawal. This
+defaults to \`*false*'.
+
+# THE DEWI HASH
+
+Dewi sets up a hash that carries information which may be interesting
+when writing filters and Perl hooks. The information provided by this
+hash is this:
+
+**BASE\_DIR**
+
+:   
+
+The name of the central directory. When \`*\~/etc/zsh*' is the packages
+directory, this will be \`*\~/etc*'.
+
+**DOT\_DEWI**
+
+:   
+
+The path of the \`.dewi' directory. This is \`*BASE\_DIR/*.dewi'.
+
+**MAJOR\_VERSION**
+
+:   
+
+The major version of the running dewi program.
+
+**MINOR\_VERSION**
+
+:   
+
+The minor version of the running dewi program.
+
+**NAME**
+
+:   
+
+The name of the program. This should better be \`*dewi*'.
+
+**PACKAGE**
+
+:   
+
+The name of the current package. When \`*\~/etc/zsh*' is the packages
+directory, this will be \`*zsh*'.
+
+**SUFFIX\_VERSION**
+
+:   
+
+The suffix version of the running dewi program. This is usually a
+\`*+git*' string when this dewi is not a released version.
+
+**VERSION**
+
+:   
+
+This is just a concatenation of *MAJOR\_VERSION*, *MINOR\_VERSION* and
+*SUFFIX\_VERSION* with a dot in between of the first two parts.
+
+# SEE ALSO
+
+dewi(7), dewi(1)
+
+# COPYRIGHT
+
+Copyright (c) 2010-2016 Frank Terbeck &lt;ft@bewatermyfriend.org&gt;,
+All rights reserved. Terms for redistribution and use can be found in
+doc/LICENCE.

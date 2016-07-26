@@ -1,0 +1,133 @@
+DEWI
+
+Jul, 2016
+
+# NAME
+
+dewi - Deploying and Withdrawing configuration files
+
+# DESCRIPTION
+
+Dewi is a system for deploying personal configuration files from a
+central place to a user's home directory. This manual is the reference
+documentation for the command line interface of the system. The system
+itself is documented in dewi(7).
+
+As a reminder: A directory containing a \`**.dewi**' directory is the
+dewi-root directory. A directory of which the parent directory has
+contains such a \`**.dewi**' directory is a dewi-sub-directory.
+
+# SUBCOMMANDS
+
+**deploy** *\[SUB-DIRECTORIES\]*
+
+:   
+
+When called in a dewi-sub-directory that contains a \`**Dewifile**',
+that file is read and the registered files are deployed. When called in
+a dewi-root, the deployment operation will be carried out in all
+dewi-sub-directories containing a \`**Dewifile**'. \\ In a dewi-root,
+you may also name a list of dewi-sub-directories that contain a
+\`**Dewifile**' to run the deploy operation in all those named
+sub-directories.
+
+**init** *\[SUB-DIRECTORIES\]*
+
+:   
+
+Initialise a directory for use with dewi. \\ When called without
+additional arguments: If called in a directory that is neither a
+dewi-root and nor a dewi-sub-directory, the directory in initialised as
+a dewi-root directory (i.e. a \`**.dewi**' directory is created). If
+called in a dewi-sub-directory, an example \`**Dewifile**' is created.
+If called in a dewi-root or in a dewi-sub-directory that already
+contains a \`**Dewifile**', an error is signaled. \\ Using this
+operation with additional arguments is *only* valid in a dewi-root
+directory (other uses will end in an error). These additional arguments
+have to be names of dewi-sub-directories that do not yet contain a
+\`**Dewifile**'. The operation then creates example Dewilfiles in each
+of the named sub-directories.
+
+**foreach** *&lt;COMMAND&gt;* (deprecated)
+
+:   
+
+Run a command in every dewified subdirectory. *COMMAND* may a multiple
+arguments, that will be joined into a single argument by spaces. \\ The
+*COMMAND* is actually run by a POSIX shell, which means you can make use
+of shell variables, like \`**\$PWD**': \\
+
+      dewi foreach echo '$PWD'\; "echo \"bam  boo\""
+
+\\ That will run these commands in all subdirectories (Note the weird
+quoting rules. Be careful, when trying tricky stuff!): \\
+
+      echo $PWD
+      echo "bam     boo"
+
+\\ Due to the trickiness of nested shell quoting, this way of the
+*foreach* sub-command is deprecated, though it will remain supported
+until further notice, since it still could be useful for the simplest of
+command executions.
+
+**foreach**
+
+:   
+
+The *foreach* sub-command supports reading scripts from *stdin*. Any
+additional command like arguments to the sub-command will be ignored.
+Here is an example: \\
+
+      dewi foreach << EOF
+      echo $PWD
+      echo \$PWD
+      echo "bam  boo"
+      EOF
+
+\\ This is much more straight forward. The only aspect, that needs to be
+considered is that the shell supports expansions in the body of
+here-documents. Thus, in the example above, *"\$PWD"* will be replaced
+by the contents of the parameter (the directory in which the command was
+issued) and *"\\\$PWD"* gets parsed and expanded by a shell that is
+called in each dewi-fied subdirectory (therefore being expanded to the
+path-name of each of those subdirectories).
+
+**help**
+
+:   
+
+Prints a brief help message.
+
+**version**
+
+:   
+
+Prints version information.
+
+**withdraw** *\[SUB-DIRECTORIES\]*
+
+:   
+
+The different ways of using this operation work exactly as with the
+\`**deploy**' operation, with the exception that instead of deploying
+files that were registered in the \`**Dewifile**', they are *withdrawn*.
+
+There is one final operation, that is not very useful for direct use:
+
+**completion** *&lt;CONTEXT&gt;*
+
+:   
+
+This operation produces a number of lines that describe useful
+completion candidates for a given *CONTEXT*. This operation may be used
+to implement completion helpers in interactive shells (like zsh).
+
+# SEE ALSO
+
+dewi(7), dewifile(5)
+
+# COPYRIGHT
+
+Copyright (c) 2010-2016 Frank Terbeck &lt;ft@bewatermyfriend.org&gt;,
+All rights reserved. Terms for redistribution and use can be found in
+doc/LICENCE.
