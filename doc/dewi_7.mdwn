@@ -1,7 +1,3 @@
-DEWI
-
-Jul, 2016
-
 # NAME
 
 dewi - personal configuration file deploy/withdraw tool
@@ -9,44 +5,44 @@ dewi - personal configuration file deploy/withdraw tool
 # DESCRIPTION
 
 People often keep their important configuration files in a central
-place, like \`*\~/etc*', where each sub-directory keeps the
+place, like ‘*\~/etc*’, where each sub-directory keeps the
 configuration files for one application (often kept in distributed
 version control, like *git*, *mercurial* or *bzr* - even though *dewi*
 does not require you to use any sort of version control at all).
 
-So basically, the directories layout may look like this: \\
+So basically, the directories layout may look like this:
 
-        +-+-(~/etc/)
-          |
-          +-----(emacs/)
-          |
-          +-----(fvwm/)
-          |
-          +-----(git/)
-          |
-          +-----(tmux/)
-          |
-          +-----(vim/)
-          |
-          \-----(zsh/)
+    +-+-(~/etc/)
+      |
+      +-----(emacs/)
+      |
+      +-----(fvwm/)
+      |
+      +-----(git/)
+      |
+      +-----(tmux/)
+      |
+      +-----(vim/)
+      |
+      \-----(zsh/)
 
 Now, in order to use such configurations, their files need to be
 deployed to the user's home directory. The file names may need to be
-changed, too. For example, \`*\~/etc/zsh/zshrc*' needs to be deployed as
-\`*\~/.zshrc*'.
+changed, too. For example, ‘*\~/etc/zsh/zshrc*’ needs to be deployed as
+‘*\~/.zshrc*’.
 
-The idea to to be able to do the following: \\
+The idea to to be able to do the following:
 
-        % cd ~/etc/zsh
-        % dewi deploy
+    % cd ~/etc/zsh
+    % dewi deploy
 
 And have the zsh configuration files deployed to the user's home
 directory automatically. A complementary dewi operation called
-\`*withdraw*' may be used to remove the previously deployed files from
+‘*withdraw*’ may be used to remove the previously deployed files from
 the home directory again.
 
-It should also be possible to do `` `dewi deploy` `` in \`*\~/etc*' to
-conveniently call the \`*deploy*' target in all dewi-controlled
+It should also be possible to do `` `dewi deploy` `` in ‘*\~/etc*’ to
+conveniently call the ‘*deploy*’ target in all dewi-controlled
 sub-directories.
 
 In order for that to happen, the dewi system keeps a little bit of
@@ -54,73 +50,71 @@ information in the dewi-root directory. *dewi*(1) is the system's main
 tool, that is used to perform the different operations the systems
 provides.
 
-To initialise the system, you would do: \\
+To initialise the system, you would do:
 
-        % cd ~/etc
-        % dewi init
+    % cd ~/etc
+    % dewi init
 
-That would add a \`*.dewi*' sub-directory to \`*\~/etc*', so now the
+That would add a ‘*.dewi*’ sub-directory to ‘*\~/etc*’, so now the
 directory layout would look like this:
 
-\\
-
-        +-+-(~/etc/)
-          |
-          +-----(.dewi/)
-          |
-          +-----(emacs/)
-          |
-          +-----(fvwm/)
-          |
-          +-----(git/)
-          |
-          +-----(tmux/)
-          |
-          +-----(vim/)
-          |
-          \-----(zsh/)
+    +-+-(~/etc/)
+      |
+      +-----(.dewi/)
+      |
+      +-----(emacs/)
+      |
+      +-----(fvwm/)
+      |
+      +-----(git/)
+      |
+      +-----(tmux/)
+      |
+      +-----(vim/)
+      |
+      \-----(zsh/)
 
 Not all sub-directories need to be dewi-controlled. In fact, only
-directories, which contain a \`*Dewifile*' are considered to be part of
+directories, which contain a ‘*Dewifile*’ are considered to be part of
 the system.
 
-The \`*dewi(1)*' tool can create an instructional example
-\`**Dewifile**' for you, if you so please (by using the \`*init*'
-operation in a dewi-subdirectory): \\
+The ‘*dewi(1)*’ tool can create an instructional example
+‘**Dewifile**’ for you, if you so please (by using the ‘*init*’
+operation in a dewi-subdirectory):
 
-        % cd ~/etc/emacs
-        % dewi init
+    % cd ~/etc/emacs
+    % dewi init
 
-The layout will look something like this now: \\
+The layout will look something like this now:
 
-        +---(root/)
-            |
-            +-----(.dewi/)
-            |
-            +--+--(emacs/)
-            |  |
-            |  \---------(Dewifile)
-            |       .
-            |       .
-            |       .
-            |       .
-            |
-            \-----(zsh/)
+    +---(root/)
+        |
+        +-----(.dewi/)
+        |
+        +--+--(emacs/)
+        |  |
+        |  \---------(Dewifile)
+        |       .
+        |       .
+        |       .
+        |       .
+        |
+        \-----(zsh/)
 
-Now you need to fill the file \`*\~/etc/emacs/Dewifile*' with suitable
-content, and then you will be able to use the \`*deploy*' and
-\`*withdraw*' operations.
+Now you need to fill the file ‘*\~/etc/emacs/Dewifile*’ with suitable
+content, and then you will be able to use the ‘*deploy*’ and
+‘*withdraw*’ operations.
 
 To summarise, the system aims to empower the user to be able to deploy
 and withdraw their configuration file from some central place to their
-home-directory by using two simple operations, namely: \\
+home-directory by using two simple operations, namely:
 
-        % dewi deploy
-        % dewi withdraw
+    % dewi deploy
+    % dewi withdraw
 
 These operations are controlled by the contents of a Perl script file
-called \`**Dewifile**'. The API for these files is documented in
-\`*dewifile(5)*'. In case you are scared of Perl, that part of the
+called ‘**Dewifile**’. The API for these files is documented in
+‘*dewifile(5)*’. In case you are scared of Perl, that part of the
 manual contains a short "Emergency Perl" section. Unless you want to
 accomplish very fancy goals in your Dewifile, you do not have to know
 any Perl at all, that exceeds the level the few lines from that
@@ -129,62 +123,43 @@ emergency section encompasses.
 Finally, take a look at the **EXAMPLES** section at the end of this
 manual to get a broad overview of how the system works. The rest of this
 manual and the *dewifile(5)* manual can be used as a reference for
-filling \`**Dewifiles**'.
+filling ‘**Dewifiles**’.
 
 # DEPLOYMENT METHODS
 
 **dewi** is able to deploy configurations using different methods. The
-default is \`*copy*' which works with every filesystem.
+default is ‘*copy*’ which works with every filesystem.
 
 Here is a list of supported methods:
 
 **copy**
-
-:   
-
-Check whether the destination file is older than the source and if so,
-copy the source file to its destination.
+:   Check whether the destination file is older than the source and if so, copy
+    the source file to its destination.
 
 **filtered**
-
-:   
-
-If this method is used, the files selected in this register run are
-subject to **filtering**. See *FILTERING INPUT FILES* in below for
-details.
+:   If this method is used, the files selected in this register run are
+    subject to **filtering**. See *FILTERING INPUT FILES* in below for
+    details.
 
 **force\_copy**
-
-:   
-
-Like \`*copy*', but does not check for age. It always copies all source
-files.
+:   Like ‘*copy*’, but does not check for age. It always copies all source
+    files.
 
 **hardlink**
-
-:   
-
-Instead of copying, create hardlinks.
-
-Note that this may cause problems if you are using version control for
-your configuration files (like git with using \`rebase').
+:   Instead of copying, create hardlinks.
+    
+    Note that this may cause problems if you are using version control for
+    your configuration files (like git with using ‘rebase’).
 
 **symlink**
-
-:   
-
-Instead of copying, create symbolic links.
+:   Instead of copying, create symbolic links.
 
 **template**
-
-:   
-
-This is just like the **filtered** method, but uses Perl's Template
-module to perform the construction of the final file. This obviously
-requires the non-standard Templete module to be installed in order to
-work. The workings of that particular module are far too complex to be
-described in any detail within this manual. See its reference manuel for
-all the details.
+:   This is just like the **filtered** method, but uses Perl's Template module to
+    perform the construction of the final file. This obviously requires the
+    non-standard Templete module to be installed in order to work. The workings
+    of that particular module are far too complex to be described in any detail
+    within this manual. See its reference manuel for all the details.
 
 # FILTERING INPUT FILES
 
@@ -193,44 +168,36 @@ don't (such as passwords in your mail-retrieval configuration), you need
 to be able to change contents on the fly. In *dewi* this is called
 **filtering**.
 
-To apply filtering, you need set the \`*method*' parameter of the
-register function to **filtered** and supply a \`*filter*' parameter,
+To apply filtering, you need set the ‘*method*’ parameter of the
+register function to **filtered** and supply a ‘*filter*’ parameter,
 which will further specify how the filtering will be done.
 
 Filtering is only done if the destination file is younger than the
-source file unless the \`*filter\_always*' option is set.
+source file unless the ‘*filter\_always*’ option is set.
 
 Filtering can be done in different ways, and specifying the
-\`*filtertype*' parameter of the register function will let you choose
+‘*filtertype*’ parameter of the register function will let you choose
 which:
 
 **perl**
-
-:   
-
-With filtertype, the \`*filter*' parameter must be a coderef that takes
-exactly one scalar argument and returns a scalar. The argument will be
-the currently processed line of the input file and the return value
-should be that line with all your filters applied. \\ This is the
-**default** filtertype.
+:   With filtertype, the ‘*filter*’ parameter must be a coderef that takes
+    exactly one scalar argument and returns a scalar. The argument will be the
+    currently processed line of the input file and the return value should be
+    that line with all your filters applied. This is the **default**
+    filtertype.
 
 **shell-file**
-
-:   
-
-This type let's you define a filename as the \`*filter*' parameter and
-that file will be called as a shell script with the input file as
-**stdin** and the deployed file's name as **stdout**.
+:   This type let's you define a filename as the ‘*filter*’ parameter and that
+    file will be called as a shell script with the input file as **stdin** and
+    the deployed file's name as **stdout**.
 
 **shell-inline**
+:   This is similar to the **shell-file** type, in the sense that the input and
+    output files are connected to **stdin** and **stdout** respectively. But
+    here, instead of a filename, the ‘*filter*’ parameter may be any chunk of
+    shell code; **including** a single command. So if you feel like filtering
+    in **Python** or **Ruby**, you can do just that.
 
-:   
-
-This is similar to the **shell-file** type, in the sense that the input
-and output files are connected to **stdin** and **stdout** respectively.
-But here, instead of a filename, the \`*filter*' parameter may be any
-chunk of shell code; **including** a single command. So if you feel like
-filtering in **Python** or **Ruby**, you can do just that.
 
 If you are using **perl** filter subroutines, you can obviously just
 bail out of the current dewi run by just exiting. If you want to do that
@@ -238,97 +205,69 @@ with the other filtertypes, you can do that by sending a signal to the
 parent process:
 
 **SIGHUP**
-
-:   
-
-When *dewi* receives this, it exists and returns a successful value.
+:   When *dewi* receives this, it exists and returns a successful value.
 
 **SIGINT**
-
-:   
-
-When this signal is received, it exists and returns failure.
+:   When this signal is received, it exists and returns failure.
 
 ## Concatenated Deployment
 
 This is an extension to filtered deployment. The idea is to concatenate
 multiple files to produce a single, bigger deployed file from them. The
-feature is controlled by the \`*concatenate*' entry within the hashref
-argument of the \`*register()*' subroutine. It is **only** valid if the
-deployment method is \`*filtered*'.
+feature is controlled by the ‘*concatenate*’ entry within the hashref
+argument of the ‘*register()*’ subroutine. It is **only** valid if the
+deployment method is ‘*filtered*’.
 
-When specified, all input files matched with \`*glob*' will be ran
-through the filter specified by \`*filter*' (or its default value if
-unspecified) and then concatenated into a file within \`*destination*'
-named after the string given in \`*concatenate*'.
+When specified, all input files matched with ‘*glob*’ will be ran
+through the filter specified by ‘*filter*’ (or its default value if
+unspecified) and then concatenated into a file within ‘*destination*’
+named after the string given in ‘*concatenate*’.
 
-When \`*concatenate*' is specified, filename transformation as specified
-by the \`*transform*' property is performed in the \`*concatenate*'
+When ‘*concatenate*’ is specified, filename transformation as specified
+by the ‘*transform*’ property is performed in the ‘*concatenate*’
 string rather than the name of one of the input files.
 
 While files are being concatenated to produce a destination file,
 multiple callbacks are run before and after each and every single input
-file. Data written to \`**stdout**' of these callbacks will be written
+file. Data written to ‘**stdout**’ of these callbacks will be written
 to the destination file. This enables you to insert headers, footers and
 other additional data to the generated file in an automated fashion.
 
-These callbacks are defined in the \`*intercat*' property of the
-\`*register()*' function's hashref. Its value is itself a hashref in
+These callbacks are defined in the ‘*intercat*’ property of the
+‘*register()*’ function's hashref. Its value is itself a hashref in
 which the following keys are considered:
 
 **firstpre**
-
-:   
-
-Executed *before* the *first* input file is put into the destination
-file.
+:   Executed *before* the *first* input file is put into the destination file.
 
 **firstpost**
-
-:   
-
-Executed *after* the *first* input file.
+:   Executed *after* the *first* input file.
 
 **lastpre**
-
-:   
-
-Executed *before* the *last* input file.
+:   Executed *before* the *last* input file.
 
 **lastpost**
-
-:   
-
-Executed *after* the *last* input file.
+:   Executed *after* the *last* input file.
 
 **otherpre**
-
-:   
-
-Executed *before* the *all other* input files.
+:   Executed *before* the *all other* input files.
 
 **otherpost**
-
-:   
-
-Executed *after* the *all other* input files.
+:   Executed *after* the *all other* input files.
 
 **type**
+:   Specifies the type of the callbacks defined. Either ‘*perl*’ (the default),
+    ‘*shell-file*’ or ‘*shell-inline*’ (like hooks and filters). If you need to
+    define the type of a specific callback, you can use properties named
+    "**&lt;CALLBACK&gt;type**". For example, to specify the type of the
+    ‘*lastpost*’ callback, you may set the ‘*lastposttype*’ property.
 
-:   
-
-Specifies the type of the callbacks defined. Either \`*perl*' (the
-default), \`*shell-file*' or \`*shell-inline*' (like hooks and filters).
-\\ If you need to define the type of a specific callback, you can use
-properties named "**&lt;CALLBACK&gt;type**". For example, to specify the
-type of the \`*lastpost*' callback, you may set the \`*lastposttype*'
-property.
 
 The callbacks are rather similar to hooks as described below. For
 example, the callback name (i.e. "**firstpre**") is handed as the first
-argument of a Perl callback subroutine (or as \`*\$DEWI\_HOOK\_EVENT*'
+argument of a Perl callback subroutine (or as ‘*\$DEWI\_HOOK\_EVENT*’
 for the external callback types). The callback arguments for
-\`*shell-inline*' type callbacks are available in
+‘*shell-inline*’ type callbacks are available in
 *\$DEWI\_HOOK\_ARG***&lt;N&gt;** environment variables as well.
 
 Concatenation callbacks are different enough to not be called hooks,
@@ -336,34 +275,35 @@ though. Their output from **stdout** is automatically inserted into the
 destination file for example. Also, the callbacks are specific to a
 given destination file and do not globally apply to the deployment
 process. They are not handled with hook API subroutines (such as
-\`*add\_hook()*') either.
+‘*add\_hook()*’) either.
 
-An example for concatenated deployment is shown below: \\
+An example for concatenated deployment is shown below:
 
-      sub header {
-          print "# Header for ~/.zshrc\n\n";
-      }
-      
-      register { # Match a bunch of files to put into the destination file.
-                 glob        => 'zshrc.d/*',
-                 # Weed out some stuff, matched by `glob'.
-                 post_glob   => sub {
-                     return remove_hashes( remove_tilde(@_) ) },
-      
-                 # The `method' needs to be `filtered' for this.
-                 method      => 'filtered',
-      
-                 # This is used as the combined destination file name.
-                 concatenate => '.zshrc',
-      
-                 # Finally inter-concatenation callbacks.
-                 intercat    => {
-                     # The default type is `perl' so the coderef is valid.
-                     firstpre => \&header,
-                     # `lastpost' uses inline shell code...
-                     lastpost => 'echo;echo # Footer for ~/.zshrc',
-                     # ...so its type must be set explicitly.
-                     lastposttype => 'shell-inline' }};
+    sub header {
+        print "# Header for ~/.zshrc\n\n";
+    }
+    
+    register {
+         # Match a bunch of files to put into the destination file.
+         glob        => 'zshrc.d/*',
+         # Weed out some stuff, matched by `glob'.
+         post_glob   => sub {
+             return remove_hashes( remove_tilde(@_) ) },
+    
+         # The `method' needs to be `filtered' for this.
+         method      => 'filtered',
+    
+         # This is used as the combined destination file name.
+         concatenate => '.zshrc',
+    
+         # Finally inter-concatenation callbacks.
+         intercat    => {
+             # The default type is `perl' so the coderef is valid.
+             firstpre => \&header,
+             # `lastpost' uses inline shell code...
+             lastpost => 'echo;echo # Footer for ~/.zshrc',
+             # ...so its type must be set explicitly.
+             lastposttype => 'shell-inline' }};
 
 The following data is available to concatenation callbacks:
 
@@ -391,13 +331,13 @@ the hook type).
 A hook usually gets additional information as some form of parameter.
 The actual kind depends on the hook type. See below.
 
-A very simple example looks like this: \\
+A very simple example looks like this:
 
-        add_hook { type  => 'shell-inline',
-                   event => 'pre-deploy',
-                   place => 'start'   # The default is 'end'
-                   code  =>
-            'echo "name: $DEWI_HOOK_EVENT, 1st arg: $DEWI_HOOK_ARG0"' };
+    add_hook { type  => 'shell-inline',
+               event => 'pre-deploy',
+               place => 'start'   # The default is 'end'
+               code  =>
+        'echo "name: $DEWI_HOOK_EVENT, 1st arg: $DEWI_HOOK_ARG0"' };
 
 The *place* argument defines where in a list of hooks the particular
 hook is added: The default is **end**, which appends the new hook at the
@@ -435,9 +375,9 @@ starts at zero.
 
 This type makes it possible to write dewi hooks in every language the
 user wants. For a python hook, the *code* parameter looks roughly like
-this: \\
+this:
 
-        "python ~/my-py-hook.py"
+    "python ~/my-py-hook.py"
 
 ## Events
 
@@ -472,12 +412,12 @@ Parameters: **0**: The package's name.
 Say, you got a configuration for a program, that is comprised of exactly
 one file that lives in your home-directory. This is quite a common case.
 You might have one file that contains your global *git* configuration:
-The \`*gitconfig*' file. To register this file to be deployed to
-\`*\~/.gitconfig*' via copying, the corresponding Dewifile looks like
-this: \\
+The ‘*gitconfig*’ file. To register this file to be deployed to
+‘*\~/.gitconfig*’ via copying, the corresponding Dewifile looks like
+this:
 
-        register 'gitconfig';
-        end;
+    register 'gitconfig';
+    end;
 
 Not scary at all.
 
@@ -486,204 +426,180 @@ Not scary at all.
 The trivial call to the *register* function deploys via copying.
 Oftentimes, however, one might like to deploy files using symlinks. The
 trivial call takes a number of arguments, that make things like that
-possible: \\
+possible:
 
-        register '--symlink', 'gitconfig';
-        end;
+    register '--symlink', 'gitconfig';
+    end;
 
-Again, not too bad. Another option \`**--no-dotfile**', tells the
+Again, not too bad. Another option ‘**--no-dotfile**’, tells the
 trivial *register* call style **not** to produce dotfiles, but leave the
 source file name untouched.
 
 ## Simple Example
 
 Now, say you got this file "init.el" that you want to copy to
-\`*\~/.emacs.d/init.el*'. This doesn't map to the trivial version of the
-\`*register*' function and you have to use its general calling
+‘*\~/.emacs.d/init.el*’. This doesn't map to the trivial version of the
+‘*register*’ function and you have to use its general calling
 convention. In its general calling convention, the function takes a
 hash-ref argument. Sounds scary, but isn't. The call just looks like
-this: \\
+this:
 
-        register { foo => 1,
-                   bar => 23,
-                   bar => 'fred' };
+    register { foo => 1,
+               bar => 23,
+               bar => 'fred' };
 
 That's just key-value pairs in curly-brackets. The actual Dewifile for
-the task at hand could look like this: \\
+the task at hand could look like this:
 
-        register { glob => 'init.el',
-                   destination => '~/.emacs.d' };
-        end;
+    register { glob => 'init.el',
+               destination => '~/.emacs.d' };
+    end;
 
 Simple enough. To extend this example a bit, say you want to deploy the
-file as a symlink to its source instead of as a copy, you'd do this: \\
+file as a symlink to its source instead of as a copy, you'd do this:
 
-        register { glob => 'init.el',
-                   destination => '~/.emacs.d',
-                   method => 'symlink' };
-        end;
+    register { glob => 'init.el',
+               destination => '~/.emacs.d',
+               method => 'symlink' };
+    end;
 
 ## More Complex Example
 
 For the more complex example, let's assume that the configuration file
-directory is \`*\~/etc*' and we want to deploy our zsh configuration
-which is located in the \`*zsh*' sub-directory of that root directory.
+directory is ‘*\~/etc*’ and we want to deploy our zsh configuration
+which is located in the ‘*zsh*’ sub-directory of that root directory.
 
-If \`*\~/etc*' is not a dewi-root directory, yet, this would do the
-trick: \\
+If ‘*\~/etc*’ is not a dewi-root directory, yet, this would do the
+trick:
 
-        % cd ~/etc
-        % dewi init
+    % cd ~/etc
+    % dewi init
 
 If your zsh configuration lives in \~/etc/zsh, to add an example
-Dewifile to that sub-directory, you'd do this (from \~/etc): \\
+Dewifile to that sub-directory, you'd do this (from \~/etc):
 
-        % dewi init zsh
+    % dewi init zsh
 
-This will give you an example \`**Dewifile**'. If you know what to put
+This will give you an example ‘**Dewifile**’. If you know what to put
 into the file already, this step is entirely optional.
 
 Now say, that the layout of *\~/etc/zsh* looks like this:
 
 **\~/etc/zsh/zshrc.d/\*.z**
-
-:   
-
-Sub configuration files, that should end up in *\~/.zshrc.d*.
+:   Sub configuration files, that should end up in *\~/.zshrc.d*.
 
 **\~/etc/zsh/zshrc**
+:   The main configuration file (that should end up as *\~/.zshrc*), which
+    loads the others from *\~/.zshrc.d*.
 
-:   
+Let's look at a verbose version of a possible ‘**Dewifile**’ that would
+get the deed done:
 
-The main configuration file (that should end up as *\~/.zshrc*), which
-loads the others from *\~/.zshrc.d*.
-
-Let's look at a verbose version of a possible \`**Dewifile**' that would
-get the deed done: \\
-
-        register { glob        => 'zshrc',
-                   method      => 'copy',
-                   destination => '~/',
-                   transform   => sub { return '.' . $_[0]; }};
-        register { glob        => 'zshrc.d/*.z',
-                   method      => 'copy',
-                   destination => '~/.zshrc.d',
-                   transform   => sub { return $_[0]; }};
+    register { glob        => 'zshrc',
+               method      => 'copy',
+               destination => '~/',
+               transform   => sub { return '.' . $_[0]; }};
+    register { glob        => 'zshrc.d/*.z',
+               method      => 'copy',
+               destination => '~/.zshrc.d',
+               transform   => sub { return $_[0]; }};
 
 Okay, this looks a bit scary. So let's see if dewi let's us express
 things in simpler ways. Some parts are optinal. Actually, all except for
 "glob" are optional. As we've seen before in the trivial example above,
-the first \`*register*' call could even be expressed by just passing a
-scalar to \`*register*', in which case that value is used as the \`glob'
+the first ‘*register*’ call could even be expressed by just passing a
+scalar to ‘*register*’, in which case that value is used as the ‘glob’
 part, and the dotfile name-transformation happens implicitly. If you'd
-have a file \`*\~/etc/zsh/zshrc*' and only wanted to deploy that, you'd
-do: \\
+have a file ‘*\~/etc/zsh/zshrc*’ and only wanted to deploy that, you'd
+do:
 
-        register 'zshrc';
+    register 'zshrc';
 
 If you take a look at the reference documentation of the *register*
 function in the *dewifile(5)* manual, that tells the function to deploy
-the file \`zshrc' with default values for all of *register*'s other
-parameters, except for \`*transform*' which will be set to a reference
-to the \`*makedotfile*' function (because the default *transfer*
+the file ‘zshrc’ with default values for all of *register*'s other
+parameters, except for ‘*transform*’ which will be set to a reference
+to the ‘*makedotfile*’ function (because the default *transfer*
 function does not change its input; it's the identity function).
 
 Once again, that way the above line would deploy the file as
-\`*\~/.zshrc*'.
+‘*\~/.zshrc*’.
 
 With all that knowledge, the previous example can be boiled down to
-this: \\
+this:
 
-        register 'zshrc';
-        register { glob        => 'zshrc.d/*.z',
-                   destination => '~/.zshrc.d', };
-        end;
+    register 'zshrc';
+    register { glob        => 'zshrc.d/*.z',
+               destination => '~/.zshrc.d', };
+    end;
 
 Easy enough.
 
-Now suppose, you got a few files named \`z\*' instead of just \`zshrc',
-like \`zlogout', \`zprofile', \`zshenv' and \`zshrc'. Your layout not
+Now suppose, you got a few files named ‘z\*’ instead of just ‘zshrc’,
+like ‘zlogout’, ‘zprofile’, ‘zshenv’ and ‘zshrc’. Your layout not
 looks like this:
 
 **\~/etc/zsh/zshrc.d/\*.z**
-
-:   
-
-Sub configuration files
+:   Sub configuration files
 
 **\~/etc/zsh/zshrc**
-
-:   
-
-The main configuration file
+:   The main configuration file
 
 **\~/etc/zsh/zshenv**
-
-:   
-
-Some other file
+:   Some other file
 
 **\~/etc/zsh/zprofile**
-
-:   
-
-And another
+:   And another
 
 **\~/etc/zsh/zlogout**
+:   And a final one
 
-:   
-
-And a final one
-
-The problem here is that you cannot just glob for \`z\*' because that
-would match \`zshrc.d', too, which is a directory. You could list all
+The problem here is that you cannot just glob for ‘z\*’ because that
+would match ‘zshrc.d’, too, which is a directory. You could list all
 those files one by one, but then what happens when you add another one,
 like *zlogin*? Would be good if there was more control to globbing.
 
-To tackle the problem, the \`glob' parameter to \`*register*' may be a
+To tackle the problem, the ‘glob’ parameter to ‘*register*’ may be a
 coderef, which grants absolute control over how filename generation is
 done. The coderef is expected to return a array of file names.
 
-When you use a coderef, you can use the \`globarg' parameter to hand an
+When you use a coderef, you can use the ‘globarg’ parameter to hand an
 argument to the coderef. Let's implement a function that matches only
 regular files that match its only argument and use that with
-\`*register*': \\
+‘*register*’:
 
-        sub glob_just_files {
-            my ($glob) = @_;
-            return grep { -f } bsd_glob($glob);
-        }
-        register { glob        => \&glob_just_files,
-                   globarg     => 'z*',
-                   transform   => \&makedotfile };
-        register { glob        => 'zshrc.d/*.z',
-                   destination => '~/.zshrc.d' };
-        end;
+    sub glob_just_files {
+        my ($glob) = @_;
+        return grep { -f } bsd_glob($glob);
+    }
+    register { glob        => \&glob_just_files,
+               globarg     => 'z*',
+               transform   => \&makedotfile };
+    register { glob        => 'zshrc.d/*.z',
+               destination => '~/.zshrc.d' };
+    end;
 
 And that works. Because that seems like a common task, *dewi* provides a
 function that does exactly what our custom function does:
 
 **regularfiles**
+:   Like the default glob, but only match regular files. Expects ‘globarg’ to be
+    a string scalar which holds the desired glob. Like "\*.txt".
 
-:   
+With that you can now do this:
 
-Like the default glob, but only match regular files. Expects \`globarg'
-to be a string scalar which holds the desired glob. Like "\*.txt".
-
-With that you can now do this: \\
-
-        register { glob        => \&regularfiles,
-                   globarg     => 'z*',
-                   transform   => \&makedotfile };
-        register { glob        => 'zshrc.d/*.z',
-                   destination => '~/.zshrc.d' };
-        end;
+    register { glob        => \&regularfiles,
+               globarg     => 'z*',
+               transform   => \&makedotfile };
+    register { glob        => 'zshrc.d/*.z',
+               destination => '~/.zshrc.d' };
+    end;
 
 These three examples should give you a general idea of how to write a
-\`**Dewifile**' in order to get "make deploy" and "make withdraw" to
+‘**Dewifile**’ in order to get "make deploy" and "make withdraw" to
 work. Much more is possible, if you are willing to dive deeper into the
 reference documentation that describes all details of the full
-\`*Dewifile*' API. For that see the dewifile(5) manual page.
+‘*Dewifile*’ API. For that see the dewifile(5) manual page.
 
 # SEE ALSO
 
