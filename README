@@ -2,52 +2,59 @@
   | dewi - deploy and withdraw configuration files  |
   +-------------------------------------------------+
 
+
 Dependencies.
 
-    Dewi requires Perl5 and a number of stardard Perl5 modules (like
-    "English", "File::Spec", "Cwd" and others).
+    Dewi requires Perl5 and a number of stardard Perl5 modules (like “English”,
+    “File::Spec”, “Cwd” and others).
 
-    It can optionally use the IPC::Run3 module from CPAN. This is required
-    to allow external filters to be run. On debian systems, installing the
-    `libipc-run3-perl' package will do the trick.
+    It can optionally  use the IPC::Run3 module from CPAN.  This is required to
+    allow  external  filters to  be  run.  On  debian systems,  installing  the
+    ‘libipc-run3-perl’ package will do the trick.
 
-    For building the documentation, the txt2tags[1] package is required.
+    Additionally,  the Template  module  from CPAN  can be  used  to provide  a
+    deployment  method called  “template”. Like  IPC::Run3, the  dependency for
+    Template  is  optional.   On  debian,  the  according   package  is  called
+    ‘libtemplate-perl’.
 
-    [1] <http://txt2tags.sourceforge.net/>
+    For building the  documentation, the pandoc¹ package  is required. However,
+    the  documentation  source code  written  in  markdown is  fairly  readable
+    without processing by pandoc.
+
+    ¹ <http://pandoc.org>
 
 
 Installation.
 
-
       I. Usage directly from the source package
 
-    To use the dewi script directly from the source package, you need to
-    do this:
+    To use  the dewi script  directly from the source  package, you need  to do
+    this:
 
         % make
 
-    Say the source package is located at `/usr/src/dewi-0.2', you would
-    now use the script directly from there:
+    Say the source package is located at ‘/usr/src/dewi-0.3’, you would now use
+    the script directly from there:
 
         % /usr/src/dewi-0.3/dewi <operation>
 
     That's all.
 
-    For convenience, if you got "$HOME/bin" in your "$PATH":
+    For convenience, if you got “$HOME/bin” in your “$PATH”:
 
         % ln -s /usr/src/dewi-0.3/dewi ~/bin/dewi
 
 
       II. Installation to the system.
 
-    You can also install everything to the system like you would do with
-    any other software package. These are the required steps:
+    You can also  install everything to the  system like you would  do with any
+    other software package. These are the required steps:
 
         % make sys
         % make install
 
-    After that the `dewi' script should be located in `/usr/local/bin'. If
-    you would like another installation prefix, use:
+    After that the ‘dewi’ script should  be located in ‘/usr/local/bin’. If you
+    would like another installation prefix, use:
 
         % make sys prefix=/my/preferred/prefix
         % make install prefix=/my/preferred/prefix
@@ -55,9 +62,9 @@ Installation.
 
       III. Documentation
 
-    The package also comes with documentation in form of txt2tags markup,
-    from which manpages are generated. In order to generate and install
-    these manpages, use these commands:
+    The package also comes with documentation in form of markdown sources, from
+    which manpages, HTML and PDF output are generated. In order to generate and
+    install the documentation, use these commands:
 
         % make doc
         % make install-doc
@@ -65,8 +72,8 @@ Installation.
 
       IV. Last words
 
-    There is also a zsh completion for the maintenance helper `dewi' in
-    `_dewi'. Put it somewhere in $fpath before calling `compinit' in your
+    There is also a zsh completion for the maintenance helper ‘dewi’ in
+    ‘_dewi’. Put it somewhere in $fpath before calling ‘compinit’ in your
     zshrc. See zsh's manual for details.
 
 
@@ -77,10 +84,10 @@ Usage.
 
 Compatibility with previous versions.
 
-    Previously, dewi depended on the `make' utility to dispatch to its
-    various operations. That was a bad idea for multiple reasons. Keeping
-    the main dewi script in ".dewi/bin" was another design mistake. Now
-    all functionality is part of the `dewi' frontend script.
+    Previously, dewi depended on the ‘make’  utility to dispatch to its various
+    operations. That was a bad idea for multiple reasons. Keeping the main dewi
+    script in “.dewi/bin” was another  design mistake. Now all functionality is
+    part of the ‘dewi’ frontend script.
 
     Basically, what used to be:
 
@@ -90,13 +97,13 @@ Compatibility with previous versions.
 
         % dewi deploy
 
-    ...and so on. Also, the contents of the .dewi directory changed to
-    avoid incompatibilities. In any case, an UPGRADE document is due for
-    the next release.
+    ...and so  on. Also, the contents  of the .dewi directory  changed to avoid
+    incompatibilities. In  any case, an  UPGRADE document  is due for  the next
+    release.
 
-    There is a tag in the project's version control history that marks the
-    last changeset, that depended on make. If you wish to keep using it
-    (in which case you're completely on your own), you can get a branch
-    that depends on said commit by doing this:
+    There is a tag in the project's version control history that marks the last
+    changeset, that depended  on make. If you  wish to keep using  it (in which
+    case you're completely on  your own), you can get a  branch that depends on
+    said commit by doing this:
 
         % git checkout -b my-dewi-fork last-make-based-changeset
