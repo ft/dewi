@@ -85,6 +85,18 @@ __install_man() {
     __copy "doc/dewifile.5" "${mandir}/man5/dewifile.5"
 }
 
+__install_html() {
+    __copy "doc/dewiprogram.html" "${docdir}/dewiprogram.html"
+    __copy "doc/dewimanual.html" "${docdir}/dewimanual.html"
+    __copy "doc/dewifile.html" "${docdir}/dewifile.html"
+}
+
+__install_pdf() {
+    __copy "doc/dewiprogram.pdf" "${docdir}/dewiprogram.pdf"
+    __copy "doc/dewimanual.pdf" "${docdir}/dewimanual.pdf"
+    __copy "doc/dewifile.pdf" "${docdir}/dewifile.pdf"
+}
+
 __install_doc() {
     __copy "README" "${docdir}/README"
     __copy "LICENCE" "${docdir}/LICENCE"
@@ -104,6 +116,8 @@ case "$1" in
         __create_dirs
         __install_man
         __install_doc
+        __install_html
+        __install_pdf
         ;;
     uninstall)
         __remove_old
