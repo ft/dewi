@@ -1,4 +1,4 @@
-* 0.2 → 0.3:
+* 0.2 → 0.3 (released 2016-07-29):
 
   - The program does not use “make” as its front-end anymore. Instead, a helper
     application “dewi” is provided. See UPGRADING for details.
