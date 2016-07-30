@@ -5,6 +5,7 @@
 # Terms for redistribution and use can be found in `LICENCE'.
 
 package Dewi::Exceptions::EarlyExit;
+use List::Util qw{ any };
 
 sub new {
     my ($class, $self) = @_;
@@ -15,8 +16,19 @@ sub new {
 
 sub still_deploy {
     my ($self) = @_;
-    return 0 unless ($#{ $self->{arguments} } >= 0);
-    return 1 if ($self->{arguments}->[0] eq q{do-deploy});
+    return 1 if ($self->arguments_has(q{do-deploy}));
+    return 0;
+}
+
+sub be_silent {
+    my ($self) = @_;
+    return 1 if ($self->arguments_has(q{be-silent}));
+    return 0;
+}
+
+sub arguments_has {
+    my ($self, $key) = @_;
+    return 1 if (any { $_ eq $key } @{ $self->{arguments} });
     return 0;
 }
 
@@ -830,7 +842,8 @@ sub read_dewifile {
     if (blessed($EVAL_ERROR)) {
         my $ev = $EVAL_ERROR;
         if ($ev->isa(q{Dewi::Exceptions::EarlyExit})) {
-            print q{dewi: Early exit from package: } . $DEWI{PACKAGE} . qq{\n};
+            warn q{dewi: Early exit from package: } . $DEWI{PACKAGE} . qq{\n}
+                unless ($ev->be_silent());
             return $ev->still_deploy();
         } else {
         warn qq{read_dewifile: Unknown exception: $EVAL_ERROR\n};

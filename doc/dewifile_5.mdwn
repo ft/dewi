@@ -228,7 +228,9 @@ multiple packages affecting each other.
 :   This function may be used to exit from a Dewifile before it is processed
     until the end. Using this function will cause the package, it was called
     from *not* to be deployed unless it is called with an argument
-    `"do-deploy"`.
+    `"do-deploy"`. The function announces that a Dewifile was exited early,
+    unless an argument `"be-silent"` is given. Arguments to this function may
+    be specified in no particular order.
 
 **expand\_path(** *PATH* **)**
 : Perform tilde-expansion on **PATH**.
