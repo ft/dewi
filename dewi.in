@@ -5,31 +5,61 @@
 # Terms for redistribution and use can be found in `LICENCE'.
 
 package Dewi::Exceptions::EarlyExit;
-use List::Util qw{ any };
 
 sub new {
-    my ($class, $self) = @_;
-    $self = {} unless (defined $self);
+    my ($class) = @_;
+    $self = { config => { do_deploy => 0,
+                          be_silent => 0,
+                          output_to_stderr => 1,
+                          exit => undef },
+              output => [ ] };
     bless $self, $class;
     return $self;
 }
 
-sub still_deploy {
+sub add_config {
+    my ($self, $hr) = @_;
+    $self->{config} = { %{ $self->{config} }, %{ $hr } };
+    return $self->{config};
+}
+
+sub add_output {
+    my ($self, $output) = @_;
+    if (ref $output eq q{ARRAY}) {
+        push @{ $self->{output} }, @{ $output };
+    } else {
+        push @{ $self->{output} }, $output;
+    }
+    return $self->{output};
+}
+
+sub print_output {
     my ($self) = @_;
-    return 1 if ($self->arguments_has(q{do-deploy}));
-    return 0;
+    my $printer = sub { return $self->print_to_stderr() ? warn @_ : print @_ };
+    foreach my $line (@{ $self->{output} }) {
+        $printer->($line, qq{\n});
+    }
+    return $#{ $self->{output} };
 }
 
 sub be_silent {
     my ($self) = @_;
-    return 1 if ($self->arguments_has(q{be-silent}));
-    return 0;
+    return $self->{config}->{be_silent};
 }
 
-sub arguments_has {
-    my ($self, $key) = @_;
-    return 1 if (any { $_ eq $key } @{ $self->{arguments} });
-    return 0;
+sub do_deploy {
+    my ($self) = @_;
+    return $self->{config}->{do_deploy};
+}
+
+sub do_exit {
+    my ($self) = @_;
+    return $self->{config}->{exit};
+}
+
+sub print_to_stderr {
+    my ($self) = @_;
+    return $self->{config}->{output_to_stderr};
 }
 
 package Dewi::Storage::WithFallback;
@@ -848,6 +878,7 @@ sub read_dewifile {
     if (blessed($EVAL_ERROR)) {
         my $ev = $EVAL_ERROR;
         if ($ev->isa(q{Dewi::Exceptions::EarlyExit})) {
+            $ev->print_output();
             warn q{dewi: Early exit from package: } . $DEWI{PACKAGE} . qq{\n}
                 unless ($ev->be_silent());
             return $ev->still_deploy();
@@ -889,7 +920,19 @@ sub end {
 }
 
 sub early_exit {
-    die Dewi::Exceptions::EarlyExit->new( { arguments => \@_ } );
+    my $exception = Dewi::Exceptions::EarlyExit->new( { arguments => \@_ } );
+    foreach my $argument (@_) {
+        my $type = ref $argument;
+        if ($type eq q{HASH}) {
+            $exception->add_config($argument);
+        } elsif ($type eq q{ARRAY} || $type eq q{}) {
+            $exception->add_output($argument);
+        } else {
+            warn qq{usage: early_exit( [ARRAYREF|HASHREF|SCALAR]... )\n};
+            exit 1;
+        }
+    }
+    die $exception;
 }
 
 ###########################################################################
@@ -1009,6 +1052,7 @@ sub run_coderef {
     if (blessed($EVAL_ERROR)) {
         my $ev = $EVAL_ERROR;
         if ($ev->isa(q{Dewi::Exceptions::EarlyExit})) {
+            $ev->print_output();
             warn qq{dewi: Early exit from $desc.\n} unless ($ev->be_silent());
         } else {
             warn qq{dewi: Unknown exception: $EVAL_ERROR\n};
