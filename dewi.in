@@ -877,7 +877,7 @@ if ($@) {
 our $NAME = 'dewi';
 our $MAJOR_VERSION = 0;
 our $MINOR_VERSION = 3;
-our $SUFFIX_VERSION = '';
+our $SUFFIX_VERSION = '+git';
 our $VERSION = $MAJOR_VERSION . '.' . $MINOR_VERSION . $SUFFIX_VERSION;
 
 # Default set of options. This will be the fallback storage for per-package
