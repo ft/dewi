@@ -722,13 +722,15 @@ sub __register {
     my (@files);
 
     if (ref($h->{glob}) eq 'CODE') {
-        @files = $h->{glob}->($h->{globarg});
+        @files = DewiInternal::run_coderef(
+            q{globbing callback}, $h->{glob}, $h->{globarg});
     } elsif (ref($h->{glob}) eq 'ARRAY') {
         foreach my $entry (@{ $h->{glob} }) {
             my @f = bsd_glob($entry);
             if (defined $h->{post_glob_single}
                 && ref $h->{post_glob_single} eq 'CODE') {
-                @f = $h->{post_glob_single}->(@f);
+                @f = DewiInternal::run_coderef(
+                    q{post_glob_single callback}, $h->{post_glob_single}, @f);
             }
             push @files, @f;
         }
@@ -736,7 +738,8 @@ sub __register {
         @files = bsd_glob($h->{glob});
     }
     if (defined $h->{post_glob} && ref $h->{post_glob} eq 'CODE') {
-        @files = $h->{post_glob}->(@files);
+        @files = DewiInternal::run_coderef(
+            q{post_glob callback}, $h->{post_glob}, @files);
     }
 
     if (ref($h->{destination}) ne 'CODE') {
@@ -751,15 +754,18 @@ sub __register {
         $new->{srcdir} = $directories;
         $new->{name} = $file;
         if (defined $h->{concatenate}) {
-            $new->{concatenate} = $h->{transform}->($h->{concatenate});
+            $new->{concatenate} = DewiInternal::run_coderef(
+                q{transform callback}, $h->{transform}, $h->{concatenate});
             $new->{transformed} = $new->{concatenate};
         } else {
-            $new->{transformed} = $h->{transform}->($file);
+            $new->{transformed} = DewiInternal::run_coderef(
+                q{transform callback}, $h->{transform}, $file);
         }
 
         if (ref($h->{destination}) eq 'CODE') {
             my %copy = %{ $new };
-            $new->{destination} = $h->{destination}->( $h->{destarg}, \%copy );
+            $new->{destination} = DewiInternal::run_coderef(
+                q{destination callback}, $h->{destination}, $h->{destarg}, \%copy );
         } else {
             $new->{destination} = $h->{destination};
         }
@@ -897,6 +903,7 @@ use Cwd;
 use File::Basename;
 use File::Copy;
 use File::Spec;
+use Scalar::Util qw{ blessed };
 
 my %optional_features = (
     external_filters => "tobeseen",
@@ -970,6 +977,46 @@ sub dewi_got_feature {
 
 sub clear_state {
     @regfiles = ( );
+}
+
+sub run_coderef {
+    my $desc = shift;
+    my $code = shift;
+    my (@list, $scalar);
+    my $wantarray = wantarray();
+    my $debug = __get_opt_bool($options, $DewiFile::local_options, q{option}, q{debug});
+    if ($debug) {
+        print qq{run_coderef(): Running a code reference for $desc\n};
+        print q{run_coderef(): Calling context is: };
+        if (!defined $wantarray) {
+            print q{void};
+        } elsif ($wantarray) {
+            print q{list};
+        } else {
+            print q{scalar};
+        }
+        print qq{\n};
+    }
+    eval {
+        if (!defined $wantarray) {
+            $code->(@_);
+        } elsif ($wantarray) {
+            @list = $code->(@_);
+        } else {
+            $scalar = $code->(@_);
+        }
+    };
+    if (blessed($EVAL_ERROR)) {
+        my $ev = $EVAL_ERROR;
+        if ($ev->isa(q{Dewi::Exceptions::EarlyExit})) {
+            warn qq{dewi: Early exit from $desc.\n} unless ($ev->be_silent());
+        } else {
+            warn qq{dewi: Unknown exception: $EVAL_ERROR\n};
+        }
+    }
+    return unless (defined $wantarray);
+    return @list if ($wantarray);
+    return $scalar;
 }
 
 # Option helpers, use the settings from DewiFile if they are defined.
@@ -1358,7 +1405,7 @@ sub __filter_perl {
 
     while (my $line = <$in>) {
         chomp $line;
-        $line = $filter->($line);
+        $line = run_coderef(q{filter callback}, $filter, $line);
         print {$out} "$line\n";
     }
 
@@ -1457,7 +1504,7 @@ sub __run_cat_cb {
             local(*STDOUT);
             open *STDOUT, q{>>}, $f->{mergedname}
                 or die "Couldn't open " . $f->path . " for appending.\n";
-            $fun->(@args);
+            run_coderef(q{intercat callback}, $fun, @args);
             close *STDOUT;
         } elsif ($type eq 'shell-file') {
             local(%ENV);
@@ -1734,7 +1781,7 @@ sub run_hook {
 
     foreach my $h (@{ $list }) {
         if ($h->{type} eq 'perl') {
-            $h->{code}->($event, @args);
+            run_coderef(qq{$event hook}, $h->{code}, $event, @args);
         } elsif ($h->{type} eq 'shell-file') {
             run_shell_hook_file($event, $h->{code}, @args);
         } elsif ($h->{type} eq 'shell-inline') {
