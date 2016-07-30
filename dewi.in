@@ -4,6 +4,22 @@
 # Frank Terbeck <ft@bewatermyfriend.org>, All rights reserved.
 # Terms for redistribution and use can be found in `LICENCE'.
 
+package Dewi::Exceptions::EarlyExit;
+
+sub new {
+    my ($class, $self) = @_;
+    $self = {} unless (defined $self);
+    bless $self, $class;
+    return $self;
+}
+
+sub still_deploy {
+    my ($self) = @_;
+    return 0 unless ($#{ $self->{arguments} } >= 0);
+    return 1 if ($self->{arguments}->[0] eq q{do-deploy});
+    return 0;
+}
+
 package Dewi::Storage::WithFallback;
 
 # Basic key/value storage with fallback support.
@@ -216,6 +232,7 @@ use File::Spec;
 use File::Basename;
 use Getopt::Long;
 use Cwd;
+use Scalar::Util qw{ blessed };
 
 my $reg_calls = 0;
 our (%DEWI, $local_options, $user_settings, $local_hooks);
@@ -806,11 +823,20 @@ sub read_dewifile {
 
     if (!-e $file) {
         warn qq{dewi: $file does not exist!\n};
-        return;
+        return 0;
     }
 
     $rc = do $file;
-    if (!defined $rc && $EVAL_ERROR) {
+    if (blessed($EVAL_ERROR)) {
+        my $ev = $EVAL_ERROR;
+        if ($ev->isa(q{Dewi::Exceptions::EarlyExit})) {
+            print q{dewi: Early exit from package: } . $DEWI{PACKAGE} . qq{\n};
+            return $ev->still_deploy();
+        } else {
+        warn qq{read_dewifile: Unknown exception: $EVAL_ERROR\n};
+        return 0;
+        }
+    } elsif (!defined $rc && $EVAL_ERROR) {
         warn qq{Could not parse $file:\n  - Reason: $EVAL_ERROR\n};
         return 0;
     } elsif (!defined $rc) {
@@ -841,6 +867,10 @@ sub dewifile_is_empty {
 # a glorified '1;' for the end of Dewifiles
 sub end {
     return 1;
+}
+
+sub early_exit {
+    die Dewi::Exceptions::EarlyExit->new( { arguments => \@_ } );
 }
 
 ###########################################################################

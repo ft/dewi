@@ -224,6 +224,12 @@ multiple packages affecting each other.
     the very end of a ‘*Dewifile*’ so that Perl can source it without errors
     and warnings.
 
+**early_exit(** *ARGUMENT(s)...* **)**
+:   This function may be used to exit from a Dewifile before it is processed
+    until the end. Usind this function will cause the package, it was called
+    from *not* to be deployed unless it is called with an argument
+    `"do-deploy"`.
+
 **expand\_path(** *PATH* **)**
 : Perform tilde-expansion on **PATH**.
 
