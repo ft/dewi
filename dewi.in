@@ -811,10 +811,10 @@ sub read_dewifile {
 
     $rc = do $file;
     if (!defined $rc && $EVAL_ERROR) {
-        warn qq{Could not parse $file:\n  - Reason: $@\n};
+        warn qq{Could not parse $file:\n  - Reason: $EVAL_ERROR\n};
         return 0;
     } elsif (!defined $rc) {
-        if ($@ eq '') {
+        if ($EVAL_ERROR eq '') {
             warn qq{$file empty?\n};
         } else {
             warn qq{Could not read $file:\n  - Reason: $ERRNO\n};
@@ -861,14 +861,14 @@ my %optional_features = (
 );
 
 eval {require IPC::Run3;};
-if ($@) {
+if ($EVAL_ERROR) {
     $optional_features{external_filters} = 'missing';
 } else {
     $optional_features{external_filters} = 'gotit';
 }
 
 eval {require Template;};
-if ($@) {
+if ($EVAL_ERROR) {
     $optional_features{templates} = 'missing';
 } else {
     $optional_features{templates} = 'gotit';
