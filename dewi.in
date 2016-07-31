@@ -972,9 +972,10 @@ if ($EVAL_ERROR) {
 }
 
 our $NAME = 'dewi';
-our $MAJOR_VERSION = 0;
-our $MINOR_VERSION = 3;
-our $SUFFIX_VERSION = '+git';
+our $MAJOR_VERSION = @@MAJOR_VERSION@@;
+our $MINOR_VERSION = @@MINOR_VERSION@@;
+our $SUFFIX_VERSION = @@VERSION_SUFFIX@@;
+our $FULL_VERSION = @@FULL_VERSION@@;
 our $VERSION = $MAJOR_VERSION . '.' . $MINOR_VERSION . $SUFFIX_VERSION;
 
 # Default set of options. This will be the fallback storage for per-package
@@ -1211,14 +1212,24 @@ sub debug {
 sub set_dewi_hash {
     my ($fromroot) = @_;
     %DewiFile::DEWI = (
-        NAME           => $NAME,
-        MAJOR_VERSION  => $MAJOR_VERSION,
-        MINOR_VERSION  => $MINOR_VERSION,
-        SUFFIX_VERSION => $SUFFIX_VERSION,
-        VERSION        => $VERSION,
-        BASE_DIR       => base_dir($fromroot),
-        DOT_DEWI       => dot_dewi($fromroot),
-        PACKAGE        => dewi_package($fromroot)
+        NAME                => $NAME,
+        MAJOR_VERSION       => $MAJOR_VERSION,
+        MINOR_VERSION       => $MINOR_VERSION,
+        SUFFIX_VERSION      => $SUFFIX_VERSION,
+        PATCH_LEVEL         => @@PATCH_LEVEL@@,
+        SOURCE_CODE_SOURCE  => @@SOURCE_CODE_SOURCE@@,
+        FULL_VERSION        => $FULL_VERSION,
+        VERSION             => $VERSION,
+        VERSION_DATE        => @@VERSION_DATE@@,
+        VERSION_DESCRIPTION => @@VERSION_DESCRIPTION@@,
+        WORK_DIR_STATE      => @@WORK_DIR_STATE@@,
+        PERL                => @@PERL5_QUOTED@@,
+        POSIX_SH            => @@POSIX_SH@@,
+        CHECKSUM            => @@VERSION_CHECKSUM@@,
+        DATA_DIR            => @@DATADIR@@,
+        BASE_DIR            => base_dir($fromroot),
+        DOT_DEWI            => dot_dewi($fromroot),
+        PACKAGE             => dewi_package($fromroot)
     );
 }
 
@@ -1262,7 +1273,7 @@ sub run_dot_dewi_script {
     if (get_opt_bool('dryrun')) {
         return 0;
     }
-    @cmd = ('@@POSIX_SH@@', $DEWI{DOT_DEWI} . $script);
+    @cmd = (@@POSIX_SH@@, $DEWI{DOT_DEWI} . $script);
     push @cmd, @args if ($#args >= 0);
     system @cmd;
     $rc = $?;
@@ -1486,7 +1497,7 @@ sub __filter_shell_file {
     } else {
         $mode = 1;
     }
-    $cmd = [ '@@POSIX_SH@@', "$filter" ];
+    $cmd = [ @@POSIX_SH@@, "$filter" ];
     IPC::Run3::run3($cmd, $src, $dst, undef, { append_stdout => $mode });
 }
 
@@ -1510,7 +1521,7 @@ sub __filter_shell_inline {
     } else {
         $mode = 1;
     }
-    $cmd = [ '@@POSIX_SH@@', '-c', "$filter" ];
+    $cmd = [ @@POSIX_SH@@, '-c', "$filter" ];
     IPC::Run3::run3($cmd, $src, $dst, undef, { append_stdout => $mode });
 }
 
@@ -1563,7 +1574,7 @@ sub __run_cat_cb {
             local(%ENV);
             $ENV{DEWI_HOOK_EVENT} = $args[0];
             shift @args;
-            IPC::Run3::run3(['@@POSIX_SH@@', $fun, @args],
+            IPC::Run3::run3([@@POSIX_SH@@, $fun, @args],
                             undef,
                             $f->{mergedname},
                             undef,
@@ -1575,7 +1586,7 @@ sub __run_cat_cb {
             for my $i (0 .. $#args) {
                 $ENV{'DEWI_HOOK_ARG' . $i} = $args[$i];
             }
-            IPC::Run3::run3(['@@POSIX_SH@@', q{-c}, $fun],
+            IPC::Run3::run3([@@POSIX_SH@@, q{-c}, $fun],
                             undef,
                             $f->{mergedname},
                             undef,
@@ -1793,7 +1804,7 @@ sub run_shell_hook_file {
     my ($ev, $file, @args) = @_;
     my (@cmd);
 
-    push @cmd, '@@POSIX_SH@@';
+    push @cmd, @@POSIX_SH@@;
     foreach my $scal (@args) {
         push @cmd, $$scal;
     }
@@ -1813,7 +1824,7 @@ sub run_shell_hook_inline {
         $ENV{"DEWI_HOOK_ARG$i"} = $$scal;
         $i++;
     }
-    system(('@@POSIX_SH@@', '-c', $code));
+    system((@@POSIX_SH@@, '-c', $code));
     delete($ENV{DEWI_HOOK_EVENT});
     foreach my $key (@env_args) {
         delete($ENV{$key});
@@ -2035,8 +2046,10 @@ sub op_init {
 }
 
 sub op_version {
+    my $v = $DewiInternal::FULL_VERSION;
+    $v =~ s{^v}{};
     print <<EOF
-dewi version $DewiInternal::VERSION
+dewi version $v
 EOF
 ;
 }
@@ -2106,7 +2119,7 @@ EOF
 
 sub _copy_files_from_dir {
     my ($dir) = @_;
-    my $src = q{@@DATADIR@@/$dir};
+    my $src = @@DATADIR@@ . q{/} . $dir;
     DewiInternal::ensure_dir(qq{.dewi/$dir});
     return unless (-d $src);
     foreach my $file (_regular_files($src)) {
@@ -2115,7 +2128,7 @@ sub _copy_files_from_dir {
 }
 
 sub _copy_global_dewifile {
-    DewiInternal::xcopy(q{@@DATADIR@@/Dewifile}, q{.dewi});
+    DewiInternal::xcopy(@@DATADIR@@ . q{/Dewifile}, q{.dewi});
 }
 
 sub _regular_files {
@@ -2167,7 +2180,7 @@ sub dewi_foreach {
     my ($subdir, $script) = @_;
     if (defined $script) {
         cd_and_do($subdir,
-                  sub { open(my $fh, q{|-}, q{@@POSIX_SH@@})
+                  sub { open(my $fh, q{|-}, @@POSIX_SH@@)
                             or die "Couldn't fork a shell: $ERRNO\n";
                         foreach my $line (@{ $script }) {
                             print {$fh} $line;
@@ -2175,7 +2188,7 @@ sub dewi_foreach {
                         close($fh)});
     } else {
         my $code = join q{ }, @ARGV;
-        cd_and_do($subdir, sub { system(q{@@POSIX_SH@@}, q{-c}, $code); });
+        cd_and_do($subdir, sub { system(@@POSIX_SH@@, q{-c}, $code); });
     }
 }
 
