@@ -1978,12 +1978,6 @@ my %ops = (
 my %completions = (
     operations => \&cmpl_operations );
 
-if ($#ARGV < 0) {
-    op_help();
-    exit 1;
-}
-my $op = $ARGV[0];
-
 # Operation handlers
 
 sub op_completion {
@@ -2309,6 +2303,12 @@ $SIG{HUP} = sub {
 };
 
 # Top-level operations dispatch
+
+if ($#ARGV < 0) {
+    op_help();
+    exit 1;
+}
+my $op = $ARGV[0];
 
 if (defined $ops{$op}) {
     if (defined $ops{$op}->{args}){
