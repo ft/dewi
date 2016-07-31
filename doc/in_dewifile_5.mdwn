@@ -644,6 +644,12 @@ hash is this:
 :   This is just a concatenation of *MAJOR\_VERSION*, *MINOR\_VERSION* and
     *SUFFIX\_VERSION* with a dot in between of the first two parts.
 
+
+# VERSION
+
+This manual describes dewi version `@@FULL_VERSION@@`.
+
+
 # SEE ALSO
 
 dewi(7), dewi(1)

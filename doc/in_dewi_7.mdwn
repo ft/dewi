@@ -601,6 +601,12 @@ work. Much more is possible, if you are willing to dive deeper into the
 reference documentation that describes all details of the full
 ‘*Dewifile*’ API. For that see the dewifile(5) manual page.
 
+
+# VERSION
+
+This manual describes dewi version `@@FULL_VERSION@@`.
+
+
 # SEE ALSO
 
 dewi(1), dewifile(5), Template(3pm)

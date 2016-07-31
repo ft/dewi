@@ -97,6 +97,12 @@ There is one final operation, that is not very useful for direct use:
     used to implement completion helpers in interactive shells (like
     zsh).
 
+
+# VERSION
+
+This manual describes dewi version `@@FULL_VERSION@@`.
+
+
 # SEE ALSO
 
 dewi(7), dewifile(5)
