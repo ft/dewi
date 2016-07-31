@@ -2028,13 +2028,13 @@ EOF
 
 sub op_init {
     my $sd = $ARGV[1];
-    if (is_dewi_root()) {
+    if ($callsite eq q{dewi-root}) {
         # Init sub-dir below dewi-root
         return init_subdir($sd) if (defined $sd);
         die "dewi: `init' in dewi-root needs to specify sub-directory!\n";
-    } elsif (is_dewi_root(q{..}) && !is_dewi_subdir()) {
+    } elsif ($callsite eq q{subdirectory-uninitialized}) {
         return init_subdir(q{.});
-    } elsif (is_dewi_subdir()) {
+    } elsif ($callsite eq q{subdirectory}) {
         die "dewi: Naming a sub-directory is only valid"
             . " in a dewi-root directory!\n" if (defined $sd);
         return init_subdir(q{.});
@@ -2219,7 +2219,7 @@ sub got_dewifile {
 
 sub init_root {
     die "dewi: Current directory is already a dewi-root (.dewi exists)!\n"
-        if (is_dewi_root());
+        if ($callsite eq q{dewi-root});
     DewiInternal::ensure_dir(q{.dewi});
     _copy_global_dewifile();
     _init_dummy_dewi_file();
@@ -2286,15 +2286,15 @@ sub parent_dir_is_dewi_root {
 
 sub root_or_subdir_guard {
     my ($op) = @_;
-    return q{root} if (is_dewi_root());
-    return q{subdir} if (is_dewi_subdir());
+    return q{root} if ($callsite eq q{dewi-root});
+    return q{subdir} if ($callsite eq q{subdirectory});
     die "dewi: `$op' is only valid in a dewi-root or sub-directory!\n";
 }
 
 sub subdir_guard {
     my ($op) = @_;
     die "dewi: $op is only valid in a dewi sub-directory!\n"
-        unless (is_dewi_subdir());
+        unless ($callsite eq q{subdirectory});
 }
 
 # signals
