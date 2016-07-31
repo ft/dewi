@@ -881,6 +881,9 @@ sub read_dewifile {
             $ev->print_output();
             warn q{dewi: Early exit from package: } . $DEWI{PACKAGE} . qq{\n}
                 unless ($ev->be_silent());
+            if (defined $ev->do_exit()) {
+                exit $ev->do_exit();
+            }
             return $ev->still_deploy();
         } else {
         warn qq{read_dewifile: Unknown exception: $EVAL_ERROR\n};
@@ -1054,6 +1057,9 @@ sub run_coderef {
         if ($ev->isa(q{Dewi::Exceptions::EarlyExit})) {
             $ev->print_output();
             warn qq{dewi: Early exit from $desc.\n} unless ($ev->be_silent());
+            if (defined $ev->do_exit()) {
+                exit $ev->do_exit();
+            }
         } else {
             warn qq{dewi: Unknown exception: $EVAL_ERROR\n};
         }
