@@ -14,6 +14,9 @@ doc/*.5
 doc/*.7
 doc/*.pdf
 doc/*.html
+doc/dewi_1.mdwn
+doc/dewi_7.mdwn
+doc/dewifile_5.mdwn
 dewi
 local.stamp
 bin/dewi.pl

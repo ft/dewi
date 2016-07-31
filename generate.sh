@@ -309,5 +309,11 @@ for file in "dewi.in" "Dewifile.in"; do
     __generate < "$file" > "$gen_file"
 done
 chmod +x "./dewi"
+for file in dewi_1.mdwn dewi_7.mdwn dewifile_5.mdwn; do
+    in_file="doc/in_$file"
+    file="doc/$file"
+    printf '  %s\n' "$file"
+    __generate < "$in_file" > "$file"
+done
 
 exit 0
