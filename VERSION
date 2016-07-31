@@ -1,0 +1,4 @@
+major_version='0'
+minor_version='3'
+version_suffix='+git'
+release_date="2016-07-29"
