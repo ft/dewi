@@ -3,6 +3,10 @@
 # Frank Terbeck <ft@bewatermyfriend.org>, All rights reserved.
 # Terms for redistribution and use can be found in `LICENCE'.
 
+# This identifies version 0.1; used to check if we're building from a working
+# dewi git repository.
+v01id='2475066cebe843978e38cdff9dd3b3a253c24c5b'
+
 die() {
     printf '%s\n' "$1"
     exit 1
@@ -101,6 +105,65 @@ got_perl_module() {
     perl -e 'eval {require '"$1"';}; if ($@) { exit 1; } else { exit 0;}'
 }
 
+is_git_repository () {
+    if ! git rev-parse --is-inside-worktree > /dev/null 2>&1; then
+        return 1
+    fi
+    thisv01=$(git log -1 --pretty=%H v0.1 2> /dev/null)
+    if test "$v01id" = "$thisv01"; then
+        return 0
+    fi
+    printf '\n  This is a git repository, but the v0.1 tag checksums do not match!\n'
+    printf '     Expected: [%s]\n' "$v01id"
+    printf '    Retrieved: [%s]\n' "$thisv01"
+    printf '  Falling back to static version information!\n\n'
+    return 1
+}
+
+get_git_version () {
+    base_="$(git describe --abbrev=12)"
+    [ -z "$base_" ] && base_="noversion-$(git show -s --pretty='%h')"
+    dirty_=""
+    git update-index -q --refresh
+    [ -z "$(git diff-index --name-only HEAD --)" ] || dirty_="-dirty"
+    REPLY="${base_#v}${dirty_}"
+}
+
+get_major_version () {
+    REPLY="${1%%.*}"
+    REPLY="${REPLY#v}"
+}
+
+get_minor_version () {
+    REPLY="${1#*.}"
+    REPLY="${REPLY%%-*}"
+}
+
+get_patch_level () {
+    REPLY="${1#*-}"
+    REPLY="${REPLY%%-*}"
+}
+
+get_git_dirty () {
+    case "$1" in
+    *-dirty) REPLY="dirty" ;;
+    *) REPLY="clean" ;;
+    esac
+}
+
+get_check_sum () {
+    REPLY="$(git log -1 --pretty=%H)"
+}
+
+get_git_description () {
+    REPLY=$(git show -s --pretty="%s")
+}
+
+get_git_date () {
+    REPLY=$(git show -s --pretty="%ai")
+    REPLY="${REPLY%% *}"
+}
+
 posix_sh=$(find_binary "$posix_sh_unres")
 die_not_found "$?" posix_sh "$posix_sh_unres"
 perl=$(find_binary "$perl_unres")
@@ -134,20 +197,81 @@ This system does not appear to have the Template Perl module installed.
     perltemplate='sorry, buddy.'
 fi
 
-printf '%s\n' "Configuration:"
+if is_git_repository; then
+    version_source="Git Repository"
+
+    get_git_version
+    full_version="v$REPLY"
+
+    get_major_version "$full_version"
+    major_version="$REPLY"
+
+    get_minor_version "$full_version"
+    minor_version="$REPLY"
+
+    get_git_dirty "$full_version"
+    work_dir_state="$REPLY"
+
+    get_patch_level "$full_version"
+    patch_level="${REPLY:-0}"
+
+    get_check_sum
+    check_sum="$REPLY"
+
+    get_git_description
+    git_description="$REPLY"
+
+    get_git_date
+    git_date="$REPLY"
+
+    if ! test "$patch_level" = 0; then
+        version_suffix='+git'
+    fi
+
+    source_source='git'
+
+else
+    version_source="VERSION File"
+    . ./VERSION
+    check_sum=undef
+    git_description=undef
+    patch_level=undef
+    git_date="$release_date"
+    full_version="${major_version}.${minor_version}${version_suffix}"
+    work_dir_state='undef'
+    source_source='tarball'
+fi
+
+printf '%s\n' "Version:"
+
+printf '  source:         %s\n' "$version_source"
+printf '  major:          %s\n' "$major_version"
+printf '  minor:          %s\n' "$minor_version"
+printf '  patch-level:    %s\n' "$patch_level"
+printf '  version-suffix: %s\n' "$version_suffix"
+printf '  work-dir-state: %s\n' "$work_dir_state"
+printf '  check-sum:      %s\n' "$check_sum"
+printf '  description:    %s\n' "$git_description"
+printf '  date:           %s\n' "$git_date"
+printf '  full-version:   %s\n' "$full_version"
+
+printf '\n%s\n' "Configuration:"
 printf '  perl:      %s\n' "$perl"
 printf '  posix_sh:  %s\n' "$posix_sh"
 printf '  datadir:   %s\n' "$datadir"
+
 if [ "$ipcrun3" = 'gotit' ]; then
     printf '  IPC::Run3: found\n'
 else
     printf '  IPC::Run3: not found\n'
 fi
+
 if [ "$perltemplate" = 'gotit' ]; then
     printf '  Template:  found\n'
 else
     printf '  Template:  not found\n'
 fi
+
 printf '\n'
 
 __generate() {
