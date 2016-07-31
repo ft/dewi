@@ -939,6 +939,10 @@ sub early_exit {
     die $exception;
 }
 
+sub callsite {
+    return $main::callsite;
+}
+
 ###########################################################################
 
 package DewiInternal;
@@ -1930,6 +1934,8 @@ use Cwd;
 use File::Basename;
 use File::Copy;
 
+our $callsite = q{unclear};
+
 # Helpers for the operations dispatch table
 
 sub xeq {
@@ -2309,6 +2315,16 @@ if ($#ARGV < 0) {
     exit 1;
 }
 my $op = $ARGV[0];
+
+if (is_dewi_root()) {
+    $callsite = q{dewi-root};
+} elsif (is_dewi_root(q{..}) && !is_dewi_subdir()) {
+    $callsite = q{subdirectory-uninitialized};
+} elsif (is_dewi_subdir()) {
+    $callsite = q{subdirectory};
+} else {
+    $callsite = q{unknown};
+}
 
 if (defined $ops{$op}) {
     if (defined $ops{$op}->{args}){
