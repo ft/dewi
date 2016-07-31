@@ -2180,7 +2180,8 @@ sub dewi_foreach {
     my ($subdir, $script) = @_;
     if (defined $script) {
         cd_and_do($subdir,
-                  sub { open(my $fh, q{|-}, @@POSIX_SH@@)
+                  sub { print qq{dewi foreach: $subdir\n};
+                        open(my $fh, q{|-}, @@POSIX_SH@@)
                             or die "Couldn't fork a shell: $ERRNO\n";
                         foreach my $line (@{ $script }) {
                             print {$fh} $line;
@@ -2188,7 +2189,8 @@ sub dewi_foreach {
                         close($fh)});
     } else {
         my $code = join q{ }, @ARGV;
-        cd_and_do($subdir, sub { system(@@POSIX_SH@@, q{-c}, $code); });
+        cd_and_do($subdir, sub { print qq{dewi foreach: $subdir\n};
+                                 system(@@POSIX_SH@@, q{-c}, $code); });
     }
 }
 
