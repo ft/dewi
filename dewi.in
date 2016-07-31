@@ -912,6 +912,7 @@ sub read_dewifile {
 # place holder function for the bootstrapping functionality
 sub dewifile_is_empty {
     print
+"Empty package: " . $DEWI{PACKAGE} . "\n".
 "This Dewifile is empty. Is was probably created by dewi's bootstrap mode.\n".
 "You will need to register the files you want dewi to deploy. This is\n".
 "merely a placeholder.   Thanks for your attention.\n";
