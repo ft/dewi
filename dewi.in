@@ -2152,7 +2152,8 @@ sub cd_and_do {
 }
 
 sub cd_and_lib_dewi {
-    my ($subdir, $op) = @_;
+    my ($subdir, $op, $announce) = @_;
+    print qq{dewi $op: $subdir\n} if ($announce);
     cd_and_do($subdir, sub { lib_dewi($op) });
 }
 
@@ -2164,11 +2165,14 @@ sub dewi {
         DewiInternal::set_dewi_hash(q{fromroot});
         DewiFile::read_dewifile(Cwd::abs_path(q{.dewi/Dewifile}));
         shift @ARGV;
+        my @pkgs;
         if ($#ARGV >= 0) {
-            map { cd_and_lib_dewi($_, $op) } @ARGV;
+            @pkgs = @ARGV;
         } else {
-            map { cd_and_lib_dewi($_, $op) } dewi_subdirs();
+            @pkgs = dewi_subdirs();
         }
+        my $announce = ($#pkgs > 0) ? 1 : 0;
+        map { cd_and_lib_dewi($_, $op, $announce) } @pkgs;
     } else {
         DewiInternal::set_dewi_hash();
         DewiFile::read_dewifile(Cwd::abs_path(q{../.dewi/Dewifile}));
