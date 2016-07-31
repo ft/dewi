@@ -275,10 +275,30 @@ fi
 printf '\n'
 
 __generate() {
-    "$perl" -npe '
-        s!\@\@DATADIR\@\@!'"$datadir"'!;
-        s!\@\@PERL5\@\@!'"$perl"'!;
-        s!\@\@POSIX_SH\@\@!'"$posix_sh"'!;
+    "$perl" -e '
+%replaces=( q{@@DATADIR@@} => q{'"$datadir"'},
+            q{@@PERL5@@} => q{'"$perl"'},
+            q{@@PERL5_QUOTED@@} => q{'"$perl"'},
+            q{@@POSIX_SH@@} => q{'"$posix_sh"'},
+            q{@@MAJOR_VERSION@@} => q{'"$major_version"'},
+            q{@@MINOR_VERSION@@} => q{'"$minor_version"'},
+            q{@@VERSION_SUFFIX@@} => q{'"$version_suffix"'},
+            q{@@VERSION_DESCRIPTION@@} => q{'"$git_description"'},
+            q{@@VERSION_DATE@@} => q{'"$git_date"'},
+            q{@@VERSION_CHECKSUM@@} => q{'"$check_sum"'},
+            q{@@WORK_DIR_STATE@@} => q{'"$work_dir_state"'},
+            q{@@PATCH_LEVEL@@} => q{'"$patch_level"'},
+            q{@@SOURCE_CODE_SOURCE@@} => q{'"$source_source"'},
+            q{@@FULL_VERSION@@} => q{'"$full_version"'} );
+while(<>) {
+    foreach $key (keys %replaces) {
+        $data = $replaces{$key};
+        $data = "q{" . $data . "}" unless ($data eq "undef" || $key eq q{@@PERL5@@});
+        s{$key}{$data};
+    }
+} continue {
+    print or die "-p destination: $!\n";
+}
     '
 }
 
