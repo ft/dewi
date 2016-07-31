@@ -1040,7 +1040,7 @@ sub run_coderef {
         }
         print qq{\n};
     }
-    eval {
+    my $rc = eval {
         if (!defined $wantarray) {
             $code->(@_);
         } elsif ($wantarray) {
@@ -1057,6 +1057,8 @@ sub run_coderef {
         } else {
             warn qq{dewi: Unknown exception: $EVAL_ERROR\n};
         }
+    } elsif (!defined $rc) {
+        warn qq{dewi: $EVAL_ERROR};
     }
     return unless (defined $wantarray);
     return @list if ($wantarray);
