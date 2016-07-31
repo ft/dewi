@@ -100,7 +100,7 @@ There is one final operation, that is not very useful for direct use:
 
 # VERSION
 
-This manual describes dewi version `@@FULL_VERSION@@`.
+This manual describes dewi version `@@DOC_VERSION@@`.
 
 
 # SEE ALSO

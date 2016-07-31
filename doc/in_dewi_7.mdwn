@@ -604,7 +604,7 @@ reference documentation that describes all details of the full
 
 # VERSION
 
-This manual describes dewi version `@@FULL_VERSION@@`.
+This manual describes dewi version `@@DOC_VERSION@@`.
 
 
 # SEE ALSO

@@ -289,11 +289,14 @@ __generate() {
             q{@@WORK_DIR_STATE@@} => q{'"$work_dir_state"'},
             q{@@PATCH_LEVEL@@} => q{'"$patch_level"'},
             q{@@SOURCE_CODE_SOURCE@@} => q{'"$source_source"'},
-            q{@@FULL_VERSION@@} => q{'"$full_version"'} );
+            q{@@FULL_VERSION@@} => q{'"$full_version"'},
+            q{@@DOC_VERSION@@} => q{'"${full_version#v}"'} );
 while(<>) {
     foreach $key (keys %replaces) {
         $data = $replaces{$key};
-        $data = "q{" . $data . "}" unless ($data eq "undef" || $key eq q{@@PERL5@@});
+        $data = "q{" . $data . "}" unless ($data eq "undef"
+                                          || $key eq q{@@PERL5@@}
+                                          || $key eq q{@@DOC_VERSION@@});
         s{$key}{$data};
     }
 } continue {

@@ -647,7 +647,7 @@ hash is this:
 
 # VERSION
 
-This manual describes dewi version `@@FULL_VERSION@@`.
+This manual describes dewi version `@@DOC_VERSION@@`.
 
 
 # SEE ALSO
