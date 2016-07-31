@@ -1214,7 +1214,7 @@ sub debug {
 
 # setup the DEWI hash
 sub set_dewi_hash {
-    my ($fromroot) = @_;
+    my ($mode) = @_;
     %DewiFile::DEWI = (
         NAME                => $NAME,
         MAJOR_VERSION       => $MAJOR_VERSION,
@@ -1231,21 +1231,23 @@ sub set_dewi_hash {
         POSIX_SH            => @@POSIX_SH@@,
         CHECKSUM            => @@VERSION_CHECKSUM@@,
         DATA_DIR            => @@DATADIR@@,
-        BASE_DIR            => base_dir($fromroot),
-        DOT_DEWI            => dot_dewi($fromroot),
-        PACKAGE             => dewi_package($fromroot)
+        BASE_DIR            => base_dir($mode),
+        DOT_DEWI            => dot_dewi($mode),
+        PACKAGE             => dewi_package($mode)
     );
 }
 
 sub base_dir {
-    my ($fromroot) = @_;
-    return Cwd::abs_path(Cwd::getcwd()) if (defined $fromroot);
+    my ($mode) = @_;
+    return if (defined $mode && $mode eq q{dewirc});
+    return Cwd::abs_path(Cwd::getcwd()) if (defined $mode && $mode eq q{fromroot});
     return Cwd::abs_path(basename(Cwd::getcwd() . "/.."))
 }
 
 sub dot_dewi {
-    my ($fromroot) = @_;
-    my $base = base_dir($fromroot);
+    my ($mode) = @_;
+    return if (defined $mode && $mode eq q{dewirc});
+    my $base = base_dir($mode);
     my $dd = "$base/.dewi";
 
     if (! -d $dd) {
@@ -1256,8 +1258,8 @@ sub dot_dewi {
 }
 
 sub dewi_package {
-    my ($fromroot) = @_;
-    return undef if (defined $fromroot);
+    my ($mode) = @_;
+    return undef if (defined $mode);
     return basename(Cwd::abs_path(Cwd::getcwd()));
 }
 
@@ -2303,6 +2305,18 @@ sub subdir_guard {
         unless ($callsite eq q{subdirectory});
 }
 
+sub update_callsite {
+    if (is_dewi_root()) {
+        $callsite = q{dewi-root};
+    } elsif (is_dewi_root(q{..}) && !is_dewi_subdir()) {
+        $callsite = q{subdirectory-uninitialized};
+    } elsif (is_dewi_subdir()) {
+        $callsite = q{subdirectory};
+    } else {
+        $callsite = q{unknown};
+    }
+}
+
 # signals
 $SIG{INT} = sub {
     print "dewi: Got SIGINT. Exiting failing, as requested.\n";
@@ -2322,14 +2336,26 @@ if ($#ARGV < 0) {
 }
 my $op = $ARGV[0];
 
-if (is_dewi_root()) {
-    $callsite = q{dewi-root};
-} elsif (is_dewi_root(q{..}) && !is_dewi_subdir()) {
-    $callsite = q{subdirectory-uninitialized};
-} elsif (is_dewi_subdir()) {
-    $callsite = q{subdirectory};
-} else {
-    $callsite = q{unknown};
+update_callsite();
+DewiInternal::set_dewi_hash(q{dewirc});
+my $dewirc = Cwd::abs_path($ENV{HOME} . q{/.dewirc});
+if (defined $dewirc && -f $dewirc && -r $dewirc) {
+    DewiFile::read_dewifile($dewirc);
+    my $root = $DewiInternal::options->get(q{default-root-directory});
+    if (defined $root && $callsite eq q{unknown}) {
+        $root = DewiInternal::expand_dir($root);
+        if (ref $root ne q{}) {
+            die qq{dewi: default-root-directory needs to be a string!\n};
+        } elsif (!-d $root) {
+            die qq{dewi: default-root-directory needs to be a directory!\n};
+        } else {
+            print qq{dewi: Switch to default-root-directory: $root\n};
+            chdir($root) or die
+                  qq{dewi: Could not change directory to $root}
+                . qq{ (default-root-directory): $ERRNO\n};
+            update_callsite();
+        }
+    }
 }
 
 if (defined $ops{$op}) {
