@@ -884,7 +884,7 @@ sub read_dewifile {
             if (defined $ev->do_exit()) {
                 exit $ev->do_exit();
             }
-            return $ev->still_deploy();
+            return $ev->do_deploy();
         } else {
         warn qq{read_dewifile: Unknown exception: $EVAL_ERROR\n};
         return 0;
