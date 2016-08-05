@@ -2063,6 +2063,15 @@ sub op_withdraw {
     dewi(q{withdraw});
 }
 
+sub op_needs_root {
+    my ($op) = @_;
+    return 0 unless (defined $op);
+    return 1 if ($op eq q{deploy});
+    return 1 if ($op eq q{withdraw});
+    return 1 if ($op eq q{completion});
+    return 0;
+}
+
 # Completion helpers
 
 sub cmpl_operations {
@@ -2345,7 +2354,7 @@ my $dewirc = Cwd::abs_path($ENV{HOME} . q{/.dewirc});
 if (defined $dewirc && -f $dewirc && -r $dewirc) {
     DewiFile::read_dewifile($dewirc);
     my $root = $DewiInternal::options->get(q{default-root-directory});
-    if (defined $root && $callsite eq q{unknown}) {
+    if (op_needs_root($op) && defined $root && $callsite eq q{unknown}) {
         $root = DewiInternal::expand_dir($root);
         if (ref $root ne q{}) {
             die qq{dewi: default-root-directory needs to be a string!\n};
