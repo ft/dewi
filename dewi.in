@@ -453,15 +453,15 @@ sub nuke_dead_links {
         my $key = $dir;
         $dir =~ s!^~!$ENV{HOME}!;
         $dir =~ s/\/+$//;
-        chdir($dir) or do { print "Couldn't change to $dir!\n";
+        chdir($dir) or do { print "Couldn't change to $dir: $ERRNO\n";
                             next DIR; };
         print "Nuking dead symbolic links in $dir/...\n";
         my @dls = grep { -l && ! -e } bsd_glob($cfg->{$key});
         foreach my $dl (sort @dls) {
-            print "  nuke_dead_links(): Removing dead link: $dl\n";
-            unlink $dl || print "    Failed to remove dead link!\n";
+            print "nuke_dead_links(): Removing dead link: $dl\n";
+            unlink $dl || print "    Failed to remove dead link: $ERRNO\n";
         }
-        chdir($odir) or die "Couldn't change to $odir!\n";
+        chdir($odir) or die "Couldn't change to $odir: $ERRNO\n";
     }
     return 1;
 }
