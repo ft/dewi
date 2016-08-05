@@ -596,7 +596,7 @@ With that you can now do this:
     end;
 
 These three examples should give you a general idea of how to write a
-‘**Dewifile**’ in order to get "make deploy" and "make withdraw" to
+‘**Dewifile**’ in order to get "dewi deploy" and "dewi withdraw" to
 work. Much more is possible, if you are willing to dive deeper into the
 reference documentation that describes all details of the full
 ‘*Dewifile*’ API. For that see the dewifile(5) manual page.

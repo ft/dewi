@@ -551,7 +551,7 @@ Possible keys are:
 
 **method**
 :   This key has to be a string which defined how the registered file should be
-    deployed by "**make deploy**". This defaults to ‘*copy*’. See dewi(7) for
+    deployed by "**dewi deploy**". This defaults to ‘*copy*’. See dewi(7) for
     details about the different possible methods.
 
 **concatenate**

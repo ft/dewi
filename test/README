@@ -41,9 +41,9 @@ test/etc/<subdir>.
 
 `run_test.sh' does the following:
 
-  - make deploy
+  - dewi deploy
   - Run verify.deploy.sh if it exists.
-  - make withdraw
+  - dewi withdraw
   - Run verify.withdraw.sh if it exists.
 
 The verify.* scripts should test significant aspects about the deployment and
