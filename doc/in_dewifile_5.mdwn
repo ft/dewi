@@ -269,7 +269,9 @@ multiple packages affecting each other.
 **nuke\_dead\_links\_register(** *DIRECTORY*, *GLOB* **)**
 :   Tell the predefined hook code *nuke\_dead\_links*, in which *DIRECTORY* look
     for dead symbolic links that match *GLOB*. This uses the *nuke-dead-links*
-    setting to track its configuration.
+    setting to track its configuration. By default, this hook will announce
+    that will start to look for dead links in a given directory. To make it
+    less verbose, set ‘*nuke-dead-links-verbose*’ to a false boolean value.
 
 **read\_dewifile(** *PERL\_SOURCE\_FILE* **)**
 :   With this, you can read files in addition to *Dewifile* and *config.perl*.
