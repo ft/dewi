@@ -2361,7 +2361,8 @@ if (defined $dewirc && -f $dewirc && -r $dewirc) {
         } elsif (!-d $root) {
             die qq{dewi: default-root-directory needs to be a directory!\n};
         } else {
-            print qq{dewi: Switch to default-root-directory: $root\n};
+            print qq{dewi: Switch to default-root-directory: $root\n}
+                unless ($op eq q{completion});
             chdir($root) or die
                   qq{dewi: Could not change directory to $root}
                 . qq{ (default-root-directory): $ERRNO\n};
