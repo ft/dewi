@@ -98,6 +98,23 @@ There is one final operation, that is not very useful for direct use:
     zsh).
 
 
+# FILES
+
+`$HOME/.dewirc`
+:   This file is read at the very start of the program running. It should be used
+    for the least possible configuration. Its main use should be to set the
+    value of “*default-root-directory*” to tell dewi where to look for a dewi
+    directory, if it is not in one already.
+
+`.dewi/Dewifile`
+:   Global configuration file in a dewi-enabled directory subtree. This should be
+    used to setup most configuration for all packages from this dewi tree.
+
+`/Dewifile`
+:   Per package Dewifile, used to configure dewi's behaviour for each and every
+    package.
+
+
 # VERSION
 
 This manual describes dewi version `@@DOC_VERSION@@`.
