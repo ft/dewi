@@ -438,6 +438,8 @@ sub nuke_dead_links_register {
     $cfg = {} unless (defined $cfg);
     $cfg->{$dir} = $glob;
     $store->set(q{nuke-dead-links-cfg}, $cfg);
+    $store->set(q{nuke-dead-links-verbose}, 1)
+        unless (defined $store->get(q{nuke-dead-links-verbose}));
     return 1;
 }
 
@@ -455,7 +457,8 @@ sub nuke_dead_links {
         $dir =~ s/\/+$//;
         chdir($dir) or do { print "Couldn't change to $dir: $ERRNO\n";
                             next DIR; };
-        print "Nuking dead symbolic links in $dir/...\n";
+        print "Nuking dead symbolic links in $dir/...\n"
+            if ($store->getopt_bool(q{nuke-dead-links-verbose}));
         my @dls = grep { -l && ! -e } bsd_glob($cfg->{$key});
         foreach my $dl (sort @dls) {
             print "nuke_dead_links(): Removing dead link: $dl\n";
