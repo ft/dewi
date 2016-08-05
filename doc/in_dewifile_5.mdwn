@@ -225,12 +225,18 @@ multiple packages affecting each other.
     and warnings.
 
 **early_exit(** *ARGUMENT(s)...* **)**
-:   This function may be used to exit from a Dewifile before it is processed
+: This function may be used to exit from a Dewifile before it is processed
     until the end. Using this function will cause the package, it was called
-    from *not* to be deployed unless it is called with an argument
-    `"do-deploy"`. The function announces that a Dewifile was exited early,
-    unless an argument `"be-silent"` is given. Arguments to this function may
-    be specified in no particular order.
+    from *not* to be deployed unless it is called with a configuration argument
+    `"do_deploy"`. The function announces that a Dewifile was exited early,
+    unless a configuration argument `"be_silent"` is given. Configuration
+    arguments may be specified as key value pairs of one of any number of
+    hashrefs. Any other arguments to the function have to be strings or
+    arrayrefs of strings, which will be output by the function line-by-line.
+    This output will be written to *stderr* unless the *output_to_stderr*
+    configuration argument is supplied. Finally, if the *exit* configuration
+    argument is supplied *early_exit* will in fact cause dewi to exit
+    altogether using its value as the program's exit value.
 
 **expand\_path(** *PATH* **)**
 : Perform tilde-expansion on **PATH**.
