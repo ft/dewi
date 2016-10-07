@@ -877,6 +877,8 @@ sub read_dewifile {
         return 0;
     }
 
+    $file = DewiInternal::merge_name(Cwd::abs_path(Cwd::getcwd()), $file)
+        unless (File::Spec->file_name_is_absolute($file));
     $rc = do $file;
     if (blessed($EVAL_ERROR)) {
         my $ev = $EVAL_ERROR;
