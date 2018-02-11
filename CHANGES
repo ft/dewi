@@ -1,3 +1,17 @@
+* 0.3 → 0.4 (released 2018-02-11):
+
+  - Add early_exit to escape from Dewifiles before their completion. See
+    dewifile(5) for details.
+
+  - Extract version information from git.
+
+  - Read ~/.dewirc
+
+  - nuke-dead-links gains a verbose option.
+
+  - A couple of minor fixes.
+
+
 * 0.2 → 0.3 (released 2016-07-29):
 
   - The program does not use “make” as its front-end anymore. Instead, a helper
