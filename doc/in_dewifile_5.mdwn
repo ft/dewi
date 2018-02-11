@@ -1,3 +1,13 @@
+---
+title: dewifile(5)
+subtitle: Reference Manual
+author:
+- name: Frank Terbeck
+  email: ft@bewatermyfriend.org
+section: 5
+date: Aug, 2016
+...
+
 # NAME
 
 Dewifile - dewi(7) configuration

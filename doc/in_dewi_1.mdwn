@@ -1,3 +1,13 @@
+---
+title: dewi(1)
+subtitle: Reference Manual
+author:
+- name: Frank Terbeck
+  email: ft@bewatermyfriend.org
+section: 1
+date: Aug, 2016
+...
+
 # NAME
 
 dewi - Deploying and Withdrawing configuration files

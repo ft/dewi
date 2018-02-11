@@ -1,3 +1,13 @@
+---
+title: dewi(7)
+subtitle: Reference Manual
+author:
+- name: Frank Terbeck
+  email: ft@bewatermyfriend.org
+section: 7
+date: Aug, 2016
+...
+
 # NAME
 
 dewi - personal configuration file deploy/withdraw tool
