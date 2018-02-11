@@ -1343,13 +1343,18 @@ sub xsymlink {
         return 1;
     }
 
+    if (not -e $src) {
+        warn "Source does not exist: $src\n";
+        return 0;
+    }
+
     if (-l $dst) {
         # if we're here, $dst exists, is a symlink but links somewhere
         # else. Remove it, so the symlink() below can succeed.
         xunlink($dst);
     }
     symlink Cwd::realpath($src), $dst
-        or die "Could not create symlink: $ERRNO\n";
+        or die "Could not create symlink ($src to $dst): $ERRNO\n";
 }
 
 sub stat_names {
