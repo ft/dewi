@@ -2,7 +2,7 @@ MAN = dewi.1 dewifile.5 dewi.7
 PDF = dewiprogram.pdf dewifile.pdf dewimanual.pdf
 HTML = dewiprogram.html dewifile.html dewimanual.html
 
-COMMONOPTIONS = --self-contained --number-sections --normalize --smart --toc
+COMMONOPTIONS = --embed-resources --standalone --number-sections --toc
 
 TEX_META = -V date='\today' --highlight-style=monochrome
 HTML_META = -c manual.css --highlight-style=monochrome
