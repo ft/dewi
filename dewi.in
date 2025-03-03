@@ -377,7 +377,7 @@ sub __add_hook {
             . " `code' needs to be a coderef.\n\n";
         goto ERROR;
     }
-    if ($h->{type} eq 'shell-file' && !-f ref($h->{code})) {
+    if ($h->{type} eq 'shell-file' && !-f $h->{code}) {
         print "add_hook(): When `type' is \"shell-file\","
             . " `code' needs to be an existing file.\n\n";
         goto ERROR;
@@ -1821,6 +1821,7 @@ sub run_shell_hook_file {
     my (@cmd);
 
     push @cmd, @@POSIX_SH@@;
+    push @cmd, $file;
     foreach my $scal (@args) {
         push @cmd, $$scal;
     }
